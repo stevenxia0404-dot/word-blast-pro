@@ -26,12 +26,12 @@ export function GameCanvas({ canvasRef, onTap, onResize }: Props) {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const onPointerDown = (e: PointerEvent) => {
+    const onClick = (e: MouseEvent) => {
       handlerRef.current(e.clientX, e.clientY)
     }
 
-    canvas.addEventListener('pointerdown', onPointerDown)
-    return () => canvas.removeEventListener('pointerdown', onPointerDown)
+    canvas.addEventListener('click', onClick)
+    return () => canvas.removeEventListener('click', onClick)
   }, [])
 
   return (

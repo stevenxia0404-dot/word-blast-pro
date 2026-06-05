@@ -82,7 +82,7 @@ function App() {
     if (matchInitedRef.current === key) return
     matchInitedRef.current = key
 
-    const frame = requestAnimationFrame(() => {
+    const timer = setTimeout(() => {
       setupCanvas()
       initGame(
         levelVocab, level.cols, level.rows,
@@ -91,8 +91,8 @@ function App() {
         () => onAllMatchedRef.current(),
       )
       startRender()
-    })
-    return () => cancelAnimationFrame(frame)
+    }, 50)
+    return () => clearTimeout(timer)
   }, [subsectionType, prog.phase, prog.levelIndex, prog.subsectionIndex])
 
   /* ── Init spell/cloze queue ── (after DOM commit) */
