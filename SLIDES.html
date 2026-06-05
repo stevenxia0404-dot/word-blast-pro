@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Word Blast Pro - 实施记录</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+/* ===========================================
+   CSS CUSTOM PROPERTIES — Game Theme
+   =========================================== */
+:root {
+  --bg-start: #fef08a;
+  --bg-end: #d9f99d;
+  --card-bg: #ffffff;
+  --emerald: #059669;
+  --emerald-light: #d1fae5;
+  --amber: #f59e0b;
+  --amber-light: #fef3c7;
+  --blue: #3b82f6;
+  --blue-light: #dbeafe;
+  --red: #ef4444;
+  --red-light: #fee2e2;
+  --text: #1f2937;
+  --text-muted: #6b7280;
+
+  --font-display: 'Fredoka One', cursive;
+  --font-body: 'Quicksand', 'PingFang SC', sans-serif;
+
+  --title-size: clamp(1.6rem, 5vw, 3.5rem);
+  --h2-size: clamp(1.2rem, 3vw, 2rem);
+  --h3-size: clamp(1rem, 2.2vw, 1.4rem);
+  --body-size: clamp(0.75rem, 1.3vw, 1rem);
+  --small-size: clamp(0.65rem, 1vw, 0.85rem);
+  --slide-padding: clamp(1rem, 3vw, 3rem);
+  --content-gap: clamp(0.6rem, 1.5vw, 1.5rem);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ===========================================
+   VIEWPORT FITTING — MANDATORY
+   =========================================== */
+html, body { height: 100%; overflow-x: hidden; }
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+
+.slide {
+  width: 100vw; height: 100vh; height: 100dvh;
+  overflow: hidden; scroll-snap-align: start;
+  display: flex; flex-direction: column; position: relative;
+}
+
+.slide-content {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: center; max-height: 100%; overflow: hidden;
+  padding: var(--slide-padding);
+}
+
+/* ===========================================
+   GAME BACKGROUND
+   =========================================== */
+body {
+  font-family: var(--font-body);
+  background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+  background-attachment: fixed;
+  color: var(--text);
+  margin: 0;
+}
+
+/* ===========================================
+   SLIDE THEMES
+   =========================================== */
+.slide-title { align-items: center; text-align: center; }
+.slide-light { background: var(--card-bg); }
+.slide-emerald { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); }
+
+/* ===========================================
+   CARDS
+   =========================================== */
+.card {
+  background: var(--card-bg);
+  border-radius: clamp(1rem, 2vw, 2rem);
+  padding: clamp(0.8rem, 1.5vw, 1.5rem);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.06);
+  border: 3px solid #d9f99d;
+}
+
+.card-sm { padding: clamp(0.5rem, 1vw, 1rem); }
+
+/* ===========================================
+   ANIMATIONS
+   =========================================== */
+.reveal {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 0.5s var(--ease-bounce), transform 0.5s var(--ease-bounce);
+}
+.slide.visible .reveal { opacity: 1; transform: translateY(0); }
+.reveal:nth-child(1) { transition-delay: 0.05s; }
+.reveal:nth-child(2) { transition-delay: 0.15s; }
+.reveal:nth-child(3) { transition-delay: 0.25s; }
+.reveal:nth-child(4) { transition-delay: 0.35s; }
+.reveal:nth-child(5) { transition-delay: 0.45s; }
+.reveal:nth-child(6) { transition-delay: 0.55s; }
+.reveal:nth-child(7) { transition-delay: 0.65s; }
+.reveal:nth-child(8) { transition-delay: 0.75s; }
+
+/* Float animation for emojis */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.float { animation: float 2.5s ease-in-out infinite; }
+
+/* Counter roll */
+@keyframes popIn {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===========================================
+   FLOW CHART (Level Structure)
+   =========================================== */
+.flow-row {
+  display: flex; align-items: center; gap: clamp(0.3rem, 0.8vw, 0.6rem);
+  flex-wrap: wrap; justify-content: center;
+}
+.flow-badge {
+  font-family: var(--font-display);
+  font-size: var(--small-size);
+  padding: clamp(0.3em, 0.6vw, 0.5em) clamp(0.5em, 1vw, 1em);
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+.flow-badge.level { background: var(--emerald); color: #fff; }
+.flow-badge.sub   { background: var(--blue-light); color: #1e40af; border: 2px solid #93c5fd; }
+.flow-badge.goal  { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #fff; }
+.flow-arrow { font-size: var(--small-size); color: var(--text-muted); }
+
+/* ===========================================
+   GRID LAYOUTS
+   =========================================== */
+.grid-2 {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: clamp(0.5rem, 1vw, 1rem);
+}
+.grid-3 {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: clamp(0.5rem, 1vw, 1rem);
+}
+
+/* ===========================================
+   TAG / PILL
+   =========================================== */
+.tag {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: var(--small-size);
+  padding: 0.3em 0.8em; border-radius: 9999px;
+}
+.tag-green  { background: var(--emerald-light); color: var(--emerald); }
+.tag-amber  { background: var(--amber-light); color: #92400e; }
+.tag-blue   { background: var(--blue-light); color: #1e40af; }
+.tag-red    { background: var(--red-light); color: #991b1b; }
+
+/* ===========================================
+   RESPONSIVE BREAKPOINTS
+   =========================================== */
+@media (max-height: 700px) {
+  :root { --slide-padding: clamp(0.7rem, 2.5vw, 1.5rem); }
+  .slide-title h1 { font-size: clamp(1.4rem, 4vw, 2.5rem); }
+}
+@media (max-height: 600px) {
+  :root { --slide-padding: clamp(0.5rem, 2vw, 1rem); }
+  .flow-row { gap: 0.25rem; }
+  .card { padding: clamp(0.4rem, 0.8vw, 0.8rem); }
+}
+@media (max-height: 500px) {
+  .flow-badge { font-size: clamp(0.55rem, 0.8vw, 0.65rem); }
+}
+@media (max-width: 600px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.2s !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* ===========================================
+   NAV DOTS
+   =========================================== */
+.nav-dots {
+  position: fixed; right: clamp(8px, 2vw, 20px); top: 50%;
+  transform: translateY(-50%); z-index: 100;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.nav-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(0,0,0,0.2); border: none; cursor: pointer;
+  transition: all 0.3s ease; padding: 0;
+}
+.nav-dot.active { background: var(--emerald); transform: scale(1.5); }
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     SLIDE 1 — TITLE
+     ============================================ -->
+<section class="slide slide-title">
+  <div class="slide-content" style="align-items:center; text-align:center;">
+    <div class="reveal float" style="font-size:clamp(3rem, 8vw, 5rem);">🎮</div>
+    <h1 class="reveal" style="font-family:var(--font-display); font-size:var(--title-size); color:var(--emerald); margin:0.3em 0 0;">
+      Word Blast Pro
+    </h1>
+    <p class="reveal" style="font-size:var(--h3-size); color:var(--text-muted); margin:0.2em 0 0.6em;">
+      实施记录 · 2026-06-05
+    </p>
+    <div class="reveal" style="display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:center;">
+      <span class="tag tag-green">React 19</span>
+      <span class="tag tag-amber">TypeScript 6</span>
+      <span class="tag tag-blue">PWA</span>
+      <span class="tag tag-green">Canvas</span>
+      <span class="tag tag-amber">Web Audio</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     SLIDE 2 — PROJECT SCALE
+     ============================================ -->
+<section class="slide slide-light">
+  <div class="slide-content" style="max-width:min(90vw,800px); margin:0 auto;">
+    <h2 class="reveal" style="font-family:var(--font-display); font-size:var(--h2-size); color:var(--emerald);">
+      📦 项目规模
+    </h2>
+    <div class="grid-2 reveal" style="margin-top:var(--content-gap);">
+      <div class="card">
+        <div style="font-family:var(--font-display); font-size:var(--h3-size); color:var(--blue);">4</div>
+        <div style="font-size:var(--small-size); color:var(--text-muted);">新增文件</div>
+        <div style="font-size:var(--small-size); margin-top:0.4em; line-height:1.6;">
+          useGameProgress · useSpellEngine<br/>SpellCanvas · Certificate
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-family:var(--font-display); font-size:var(--h3-size); color:var(--amber);">9</div>
+        <div style="font-size:var(--small-size); color:var(--text-muted);">修改文件</div>
+        <div style="font-size:var(--small-size); margin-top:0.4em; line-height:1.6;">
+          App · gameConfig · GameEngine<br/>Audio · ScoreBoard · 等
+        </div>
+      </div>
+    </div>
+    <div class="card reveal" style="margin-top:var(--content-gap);">
+      <div style="font-size:var(--body-size); line-height:1.6;">
+        <span class="tag tag-green">108</span> 条词库 &nbsp;
+        <span class="tag tag-amber">12</span> 关卡 &nbsp;
+        <span class="tag tag-blue">5</span> 种游戏模式 &nbsp;
+        <span class="tag tag-green">3</span> 级求助
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     SLIDE 3 — GAME STRUCTURE (Part 1)
+     ============================================ -->
+<section class="slide">
+  <div class="slide-content" style="max-width:min(90vw,860px); margin:0 auto;">
+    <h2 class="reveal" style="font-family:var(--font-display); font-size:var(--h2-size); color:var(--emerald);">
+      🗺️ 12关线性通关
+    </h2>
+
+    <!-- 基础关 1-9 -->
+    <div class="reveal card" style="margin-top:var(--content-gap);">
+      <div style="font-family:var(--font-display); font-size:var(--small-size); color:var(--emerald); margin-bottom:0.3em;">
+        基础关 1-9 · 3×4 网格
+      </div>
+      <div class="flow-row">
+        <span class="flow-badge sub">配对消消</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-badge sub">字母拼写</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-badge sub">完形填空</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-badge level">⭐ 通关</span>
+      </div>
+    </div>
+
+    <!-- 短语关 10-11 -->
+    <div class="reveal card" style="margin-top:var(--content-gap);">
+      <div style="font-family:var(--font-display); font-size:var(--small-size); color:var(--amber); margin-bottom:0.3em;">
+        短语关 10-11 · 2×3 网格
+      </div>
+      <div class="flow-row">
+        <span class="flow-badge sub">短语配对</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-badge sub">选词拼短语</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-badge sub">单词拼写</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-badge level">⭐ 通关</span>
+      </div>
+    </div>
+
+    <!-- 句子关 12 -->
+    <div class="reveal card" style="margin-top:var(--content-gap);">
+      <div style="font-family:var(--font-display); font-size:var(--small-size); color:var(--blue); margin-bottom:0.3em;">
+        句子关 12 · 2×2 网格
+      </div>
+      <div class="flow-row">
+        <span class="flow-badge sub">句子配对</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-badge sub">完形填空</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-badge sub">连词成句</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-badge goal">🏆 毕业证书</span>
+      </div>
+    </div>
+
+    <div class="reveal" style="text-align:center; margin-top:var(--content-gap); font-size:var(--small-size); color:var(--text-muted);">
+      共 36 个小节 · 认读 → 默写 → 运用 闭环
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     SLIDE 4 — SCORING SYSTEM
+     ============================================ -->
+<section class="slide slide-light">
+  <div class="slide-content" style="max-width:min(90vw,760px); margin:0 auto;">
+    <h2 class="reveal" style="font-family:var(--font-display); font-size:var(--h2-size); color:var(--emerald);">
+      💰 积分体系
+    </h2>
+
+    <div class="grid-2 reveal" style="margin-top:var(--content-gap);">
+      <!-- 赚分 -->
+      <div class="card card-sm">
+        <div style="font-family:var(--font-display); font-size:var(--h3-size); color:var(--emerald);">赚分</div>
+        <div style="font-size:var(--small-size); line-height:1.8; margin-top:0.3em;">
+          ✅ 正确配对 <b>+100</b><br/>
+          ✅ 正确拼写 <b>+100</b><br/>
+          ✅ 完形填空 <b>+100</b><br/>
+          🔥 Combo <b>+50×连击数</b>
+        </div>
+      </div>
+
+      <!-- 求助 -->
+      <div class="card card-sm">
+        <div style="font-family:var(--font-display); font-size:var(--h3-size); color:var(--red);">求助扣分</div>
+        <div style="font-size:var(--small-size); line-height:1.8; margin-top:0.3em;">
+          L1 首字母 <b style="color:var(--red);">-300</b> 得+30<br/>
+          L2 揭露一半 <b style="color:var(--red);">-500</b> 得+10<br/>
+          L3 跳过 <b style="color:var(--red);">-800</b> 得0<br/>
+          <span style="color:var(--text-muted);">连错2次触发 · 不计准确率</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 星级评定 -->
+    <div class="reveal card card-sm" style="margin-top:var(--content-gap); text-align:center;">
+      <div style="font-family:var(--font-display); font-size:var(--h3-size); color:var(--amber); margin-bottom:0.3em;">⭐ 星级评定（每关）</div>
+      <div style="font-size:var(--body-size);">
+        ⭐⭐⭐ ≥ 90% &emsp; ⭐⭐ ≥ 70% &emsp; ⭐ ≥ 通关
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     SLIDE 5 — TITLE RANKS
+     ============================================ -->
+<section class="slide">
+  <div class="slide-content" style="max-width:min(90vw,700px); margin:0 auto; text-align:center;">
+    <h2 class="reveal" style="font-family:var(--font-display); font-size:var(--h2-size); color:var(--emerald);">
+      🎖️ 称号等级
+    </h2>
+    <div class="reveal" style="display:flex; flex-direction:column; gap:clamp(0.4rem, 0.8vh, 0.7rem); margin-top:var(--content-gap);">
+      <div class="card card-sm" style="display:flex; align-items:center; gap:0.8em; justify-content:center;">
+        <span style="font-size:clamp(1.5rem, 2.5vw, 2.5rem);">👑</span>
+        <span style="font-family:var(--font-display); font-size:var(--h3-size);">单词大王</span>
+        <span class="tag tag-amber" style="margin-left:auto;">5000 分</span>
+      </div>
+      <div class="card card-sm" style="display:flex; align-items:center; gap:0.8em; justify-content:center;">
+        <span style="font-size:clamp(1.5rem, 2.5vw, 2.5rem);">🔥</span>
+        <span style="font-family:var(--font-display); font-size:var(--h3-size);">英语学霸</span>
+        <span class="tag tag-amber" style="margin-left:auto;">3000 分</span>
+      </div>
+      <div class="card card-sm" style="display:flex; align-items:center; gap:0.8em; justify-content:center;">
+        <span style="font-size:clamp(1.5rem, 2.5vw, 2.5rem);">🌳</span>
+        <span style="font-family:var(--font-display); font-size:var(--h3-size);">英语小树</span>
+        <span class="tag tag-amber" style="margin-left:auto;">1500 分</span>
+      </div>
+      <div class="card card-sm" style="display:flex; align-items:center; gap:0.8em; justify-content:center;">
+        <span style="font-size:clamp(1.5rem, 2.5vw, 2.5rem);">🌿</span>
+        <span style="font-family:var(--font-display); font-size:var(--h3-size);">英语小苗</span>
+        <span class="tag tag-amber" style="margin-left:auto;">500 分</span>
+      </div>
+      <div class="card card-sm" style="display:flex; align-items:center; gap:0.8em; justify-content:center;">
+        <span style="font-size:clamp(1.5rem, 2.5vw, 2.5rem);">🌱</span>
+        <span style="font-family:var(--font-display); font-size:var(--h3-size);">英语小芽</span>
+        <span class="tag tag-amber" style="margin-left:auto;">0 分</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     SLIDE 6 — BUG FIXES #1-2
+     ============================================ -->
+<section class="slide slide-light">
+  <div class="slide-content" style="max-width:min(90vw,760px); margin:0 auto;">
+    <h2 class="reveal" style="font-family:var(--font-display); font-size:var(--h2-size); color:var(--emerald);">
+      🐛 Bug 修复 #1-2
+    </h2>
+
+    <div class="reveal card" style="margin-top:var(--content-gap); border-left: 5px solid var(--red);">
+      <div style="display:flex; align-items:center; gap:0.5em;">
+        <span class="tag tag-red">BUG</span>
+        <span style="font-family:var(--font-display); font-size:var(--h3-size);">L3 求助后卡住不跳题</span>
+      </div>
+      <div style="font-size:var(--small-size); margin-top:0.4em; line-height:1.6;">
+        <b>根因：</b><code>revealHelp()</code> 填满槽位设 <code>isComplete: true</code>，未设 <code>isCorrect: true</code><br/>
+        <b>修复：</b>L3 时同步设 <code>isCorrect: true</code>，触发跳题流程
+      </div>
+    </div>
+
+    <div class="reveal card" style="margin-top:var(--content-gap); border-left: 5px solid var(--red);">
+      <div style="display:flex; align-items:center; gap:0.5em;">
+        <span class="tag tag-red">BUG</span>
+        <span style="font-family:var(--font-display); font-size:var(--h3-size);">拼写/填空正确后无语音</span>
+      </div>
+      <div style="font-size:var(--small-size); margin-top:0.4em; line-height:1.6;">
+        <b>根因：</b>App.tsx 拼写结果处理中未调用 <code>speakWord()</code><br/>
+        <b>修复：</b>从 <code>spellState.answerTokens</code> 拼接英文单词，调用 TTS 朗读
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     SLIDE 7 — BUG FIXES #3-4
+     ============================================ -->
+<section class="slide">
+  <div class="slide-content" style="max-width:min(90vw,760px); margin:0 auto;">
+    <h2 class="reveal" style="font-family:var(--font-display); font-size:var(--h2-size); color:var(--emerald);">
+      🐛 Bug 修复 #3-4
+    </h2>
+
+    <div class="reveal card" style="margin-top:var(--content-gap); border-left: 5px solid var(--amber);">
+      <div style="display:flex; align-items:center; gap:0.5em;">
+        <span class="tag tag-amber">MOBILE</span>
+        <span style="font-family:var(--font-display); font-size:var(--h3-size);">移动端 TTS 语音失效</span>
+      </div>
+      <div style="font-size:var(--small-size); margin-top:0.4em; line-height:1.6;">
+        <b>3个子问题 + 修复：</b><br/>
+        ① <code>getVoices()</code> 静态缓存 → 每次实时获取<br/>
+        ② iOS voice 匹配失败 → fallback 加入 Samantha/Daniel/Karen<br/>
+        ③ <code>cancel()</code> 竞态 → <code>speak()</code> 前加 60ms debounce
+      </div>
+    </div>
+
+    <div class="reveal card" style="margin-top:var(--content-gap); border-left: 5px solid var(--blue);">
+      <div style="display:flex; align-items:center; gap:0.5em;">
+        <span class="tag tag-blue">UI</span>
+        <span style="font-family:var(--font-display); font-size:var(--h3-size);">PWA 全设备自适应</span>
+      </div>
+      <div style="font-size:var(--small-size); margin-top:0.4em; line-height:1.6;">
+        <b>覆盖：</b>iPhone 全系 · iPad · Android 手机+平板 · 折叠屏 · 桌面<br/>
+        <b>策略：</b>响应式容器 → 视口比例 Canvas → <code>safe-area-inset</code> → 44px 触控目标
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     SLIDE 8 — CLOSING
+     ============================================ -->
+<section class="slide slide-emerald">
+  <div class="slide-content" style="align-items:center; text-align:center;">
+    <div class="reveal float" style="font-size:clamp(2.5rem, 6vw, 4rem);">✨🎮✨</div>
+    <h2 class="reveal" style="font-family:var(--font-display); font-size:var(--h2-size); color:var(--emerald); margin:0.3em 0 0.1em;">
+      Ready to Play!
+    </h2>
+    <p class="reveal" style="font-size:var(--h3-size); color:var(--text-muted);">
+      12关 · 36小节 · 108词库
+    </p>
+    <p class="reveal" style="font-size:var(--small-size); color:var(--text-muted); margin-top:0.5em;">
+      React 19 + Vite 8 + TypeScript + PWA
+    </p>
+    <div class="reveal" style="margin-top:1em;">
+      <span class="tag tag-green">配对消消</span>
+      <span class="tag tag-amber">字母拼写</span>
+      <span class="tag tag-blue">完形填空</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     NAV DOTS
+     ============================================ -->
+<nav class="nav-dots" id="navDots"></nav>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   =========================================== */
+class SlidePresentation {
+  constructor() {
+    this.slides = document.querySelectorAll('.slide');
+    this.navDots = document.getElementById('navDots');
+    this.buildNavDots();
+    this.setupObserver();
+    this.setupKeyboard();
+    this.setupTouch();
+    this.setupWheel();
+  }
+
+  buildNavDots() {
+    this.navDots.innerHTML = '';
+    this.slides.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.className = 'nav-dot';
+      dot.setAttribute('aria-label', `Slide ${i + 1}`);
+      dot.addEventListener('click', () => this.goTo(i));
+      this.navDots.appendChild(dot);
+    });
+  }
+
+  setupObserver() {
+    const opts = { root: null, threshold: 0.5 };
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          const idx = Array.from(this.slides).indexOf(e.target);
+          this.updateDots(idx);
+        }
+      });
+    }, opts);
+    this.slides.forEach(s => obs.observe(s));
+  }
+
+  setupKeyboard() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault(); this.next();
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault(); this.prev();
+      }
+    });
+  }
+
+  setupTouch() {
+    let startY = 0;
+    document.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      const diff = startY - e.changedTouches[0].clientY;
+      if (Math.abs(diff) > 50) { diff > 0 ? this.next() : this.prev(); }
+    });
+  }
+
+  setupWheel() {
+    let wheelTimeout;
+    document.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      if (wheelTimeout) return;
+      wheelTimeout = setTimeout(() => { wheelTimeout = null; }, 800);
+      e.deltaY > 0 ? this.next() : this.prev();
+    }, { passive: false });
+  }
+
+  goTo(idx) {
+    if (idx < 0 || idx >= this.slides.length) return;
+    this.slides[idx].scrollIntoView({ behavior: 'smooth' });
+  }
+
+  next() {
+    const current = this.getCurrent();
+    if (current < this.slides.length - 1) this.goTo(current + 1);
+  }
+
+  prev() {
+    const current = this.getCurrent();
+    if (current > 0) this.goTo(current - 1);
+  }
+
+  getCurrent() {
+    const center = window.innerHeight / 2;
+    let closest = 0, minDist = Infinity;
+    this.slides.forEach((s, i) => {
+      const rect = s.getBoundingClientRect();
+      const dist = Math.abs(rect.top + rect.height / 2 - center);
+      if (dist < minDist) { minDist = dist; closest = i; }
+    });
+    return closest;
+  }
+
+  updateDots(idx) {
+    Array.from(this.navDots.children).forEach((d, i) => {
+      d.classList.toggle('active', i === idx);
+    });
+  }
+}
+
+new SlidePresentation();
+</script>
+</body>
+</html>

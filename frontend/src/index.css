@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap');
+@import "tailwindcss";
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  height: -webkit-fill-available;
+}
+
+body {
+  font-family: 'Quicksand', 'PingFang SC', sans-serif;
+  background: linear-gradient(135deg, #fef08a 0%, #d9f99d 100%);
+  background-attachment: fixed;
+  user-select: none;
+  -webkit-user-select: none;
+  margin: 0;
+  padding: 0;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.bubbly-font {
+  font-family: 'Fredoka One', cursive;
+}
+
+/* 响应式容器 */
+.game-container {
+  width: 100%;
+  padding-left: max(12px, env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
+}
+
+/* 触控友好的最小点击区域 */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
