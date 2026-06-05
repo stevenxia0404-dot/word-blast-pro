@@ -153,11 +153,16 @@ export function useGameEngine() {
     }
     if (!clicked) return
 
-    playSoftTone(261.63, 'triangle', 0.08)
     const cur = gridRef.current[clicked.r][clicked.c]
     const prevSel = selectedRef.current
 
-    if (!prevSel) { selectedRef.current = clicked; return }
+    if (!prevSel) {
+      selectedRef.current = clicked
+      cancelAnimationFrame(animFrameRef.current)
+      animFrameRef.current = requestAnimationFrame(renderLoop)
+      playSoftTone(261.63, 'triangle', 0.08)
+      return
+    }
     if (prevSel.r === clicked.r && prevSel.c === clicked.c) { selectedRef.current = null; return }
 
     const prev = gridRef.current[prevSel.r][prevSel.c]
