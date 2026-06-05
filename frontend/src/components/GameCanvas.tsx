@@ -12,15 +12,9 @@ export function GameCanvas({ canvasRef, onTap, onResize }: Props) {
   const resizeHandlerRef = useRef(onResize)
   resizeHandlerRef.current = onResize
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    clickHandlerRef.current(e.clientX, e.clientY)
-  }, [])
-
-  const handleTouch = useCallback((e: React.TouchEvent) => {
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault()
-    if (e.touches.length > 0) {
-      clickHandlerRef.current(e.touches[0].clientX, e.touches[0].clientY)
-    }
+    clickHandlerRef.current(e.clientX, e.clientY)
   }, [])
 
   useEffect(() => {
@@ -39,8 +33,7 @@ export function GameCanvas({ canvasRef, onTap, onResize }: Props) {
         ref={canvasRef}
         className="w-full block rounded-2xl touch-none"
         style={{ height: 'clamp(260px, 55vh, 600px)' }}
-        onClick={handleClick}
-        onTouchStart={handleTouch}
+        onPointerDown={handlePointerDown}
       />
     </div>
   )
