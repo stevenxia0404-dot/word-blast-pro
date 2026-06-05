@@ -12,8 +12,7 @@ export function GameCanvas({ canvasRef, onTap, onResize }: Props) {
   const resizeHandlerRef = useRef(onResize)
   resizeHandlerRef.current = onResize
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault()
+  const handleClick = useCallback((e: React.MouseEvent) => {
     clickHandlerRef.current(e.clientX, e.clientY)
   }, [])
 
@@ -31,9 +30,9 @@ export function GameCanvas({ canvasRef, onTap, onResize }: Props) {
     <div className="relative w-full bg-white rounded-[2rem] p-3 shadow-[0_24px_48px_rgba(132,204,22,0.15)] border-4 border-white">
       <canvas
         ref={canvasRef}
-        className="w-full block rounded-2xl touch-none"
+        className="w-full block rounded-2xl touch-manipulation"
         style={{ height: 'clamp(260px, 55vh, 600px)' }}
-        onPointerDown={handlePointerDown}
+        onClick={handleClick}
       />
     </div>
   )
