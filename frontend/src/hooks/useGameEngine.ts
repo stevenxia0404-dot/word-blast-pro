@@ -40,12 +40,33 @@ export function useGameEngine() {
     if (!canvas) return
     const dpr = window.devicePixelRatio || 1
     const crect = canvas.getBoundingClientRect()
+    const oldW = sizeRef.current.w
+    const oldH = sizeRef.current.h
     sizeRef.current.w = crect.width
     sizeRef.current.h = crect.height
     canvas.width = crect.width * dpr
     canvas.height = crect.height * dpr
     const ctx = canvas.getContext('2d')
     if (ctx) ctx.scale(dpr, dpr)
+
+    if ((oldW !== crect.width || oldH !== crect.height)) {
+      const pad = 12
+      const cols = colsRef.current
+      const rows = rowsRef.current
+      const tw = (crect.width - (cols + 1) * pad) / cols
+      const th = (crect.height - (rows + 1) * pad) / rows
+      tileSizeRef.current = { w: tw, h: th }
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const t = gridRef.current[r]?.[c]
+          if (!t || t.isEliminated) continue
+          t.x = pad + c * (tw + pad)
+          t.targetX = t.x
+          t.y = pad + r * (th + pad)
+          t.targetY = t.y
+        }
+      }
+    }
   }, [])
 
   const initGame = useCallback((
