@@ -5,15 +5,13 @@ function getAudioCtx(): AudioContext {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
   }
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume()
-  }
   return audioCtx
 }
 
-export function playSoftTone(freq: number, type: OscillatorType = 'sine', duration = 0.1) {
+export async function playSoftTone(freq: number, type: OscillatorType = 'sine', duration = 0.1) {
   try {
     const ctx = getAudioCtx()
+    if (ctx.state === 'suspended') await ctx.resume()
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.type = type
