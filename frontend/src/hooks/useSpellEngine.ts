@@ -151,6 +151,24 @@ export function useSpellEngine() {
     })
   }, [])
 
+  const tapSlot = useCallback((slotIndex: number) => {
+    setState(prev => {
+      if (!prev || prev.isComplete) return prev
+      const slot = prev.slots[slotIndex]
+      if (!slot || slot.char === null) return prev
+      const newSlots = prev.slots.map((s, i) =>
+        i === slotIndex ? { ...s, char: null } : { ...s }
+      )
+      return {
+        ...prev,
+        slots: newSlots,
+        filledCount: prev.filledCount - 1,
+        isComplete: false,
+        isCorrect: null,
+      }
+    })
+  }, [])
+
   const clearSlots = useCallback(() => {
     setState(prev => {
       if (!prev) return prev
@@ -183,5 +201,5 @@ export function useSpellEngine() {
     })
   }, [])
 
-  return { state, initSpell, tapCandidate, clearSlots, revealHelp }
+  return { state, initSpell, tapCandidate, tapSlot, clearSlots, revealHelp }
 }

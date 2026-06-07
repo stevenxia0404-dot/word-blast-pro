@@ -12,10 +12,11 @@ import { SpellCanvas } from './components/SpellCanvas'
 import { StatusBar } from './components/StatusBar'
 import { Certificate } from './components/Certificate'
 import { DebugPanel } from './components/DebugPanel'
+import { GuidePage } from './components/GuidePage'
 
 function App() {
   const { canvasRef, setupCanvas, initGame, startRender, stopRender, handleTap } = useGameEngine()
-  const { state: spellState, initSpell, tapCandidate, revealHelp } = useSpellEngine()
+  const { state: spellState, initSpell, tapCandidate, tapSlot, revealHelp } = useSpellEngine()
   const prog = useGameProgress()
 
   const [wordQueue, setWordQueue] = useState<VocabItem[]>([])
@@ -24,6 +25,7 @@ function App() {
   const [showHelpBtn, setShowHelpBtn] = useState(false)
   const [spellResult, setSpellResult] = useState<boolean | null>(null)
   const [debugOpen, setDebugOpen] = useState(false)
+  const [showGuide, setShowGuide] = useState(false)
   const subsectionInitedRef = useRef('')
   const subsectionRef = useRef(prog.subsectionIndex)
   subsectionRef.current = prog.subsectionIndex
@@ -134,6 +136,10 @@ function App() {
     tapCandidate(c)
   }, [tapCandidate])
 
+  const handleTapSlot = useCallback((index: number) => {
+    tapSlot(index)
+  }, [tapSlot])
+
   /* ── Watch spell result ── */
   useEffect(() => {
     if (!spellState || subsectionType === 'match') return
@@ -180,7 +186,8 @@ function App() {
   const totalStars = prog.levelResults.reduce((sum, r) => sum + r.stars, 0)
 
   return (
-    <div className="w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto flex flex-col items-center relative min-h-[100dvh] px-3 sm:px-4 md:px-6 pt-2 pb-6">
+    <>
+      <div className="w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto flex flex-col items-center relative min-h-[100dvh] px-3 sm:px-4 md:px-6 pt-2 pb-6">
       {/* Welcome */}
       {prog.phase === 'welcome' && (
         <WelcomeOverlay onStart={handleWelcomeStart} />
@@ -212,6 +219,7 @@ function App() {
                 helpLevel={prog.help.helpLevel}
                 showHelp={showHelpBtn}
                 onTapCandidate={handleTapCandidate}
+                onTapSlot={handleTapSlot}
                 onUseHelp={prog.useHelp}
               />
               {spellResult !== null && (
@@ -288,7 +296,29 @@ function App() {
           onClose={() => setDebugOpen(false)}
         />
       )}
+
+      {/* Guide Page */}
+      {showGuide && (
+        <GuidePage onClose={() => setShowGuide(false)} />
+      )}
     </div>
+
+    {/* Guide button — outside container, on green background */}
+    {(prog.phase === 'welcome' || prog.phase === 'playing') && !showGuide && (
+      <button
+        type="button"
+        onClick={() => setShowGuide(true)}
+        className="fixed top-4 right-4 z-30 w-11 h-11 bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] flex items-center justify-center text-xl font-bold text-gray-600 hover:text-emerald-600 transition-all active:scale-90"
+        aria-label="使用说明"
+      >
+        ?
+      </button>
+    )}
+
+    <div className="hidden">{
+      // dummy element to keep the fragment structure valid
+    }</div>
+    </>
   )
 }
 

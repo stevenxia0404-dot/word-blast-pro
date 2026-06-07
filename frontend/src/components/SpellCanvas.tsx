@@ -6,10 +6,11 @@ interface Props {
   helpLevel: number
   showHelp: boolean
   onTapCandidate: (c: string) => void
+  onTapSlot: (index: number) => void
   onUseHelp: () => void
 }
 
-export function SpellCanvas({ state, helpLevel, showHelp, onTapCandidate, onUseHelp }: Props) {
+export function SpellCanvas({ state, helpLevel, showHelp, onTapCandidate, onTapSlot, onUseHelp }: Props) {
   const prevCorrectRef = useRef<boolean | null>(null)
 
   useEffect(() => {
@@ -46,12 +47,13 @@ export function SpellCanvas({ state, helpLevel, showHelp, onTapCandidate, onUseH
               w-9 h-11 sm:w-11 sm:h-14 md:w-14 md:h-16 lg:w-16 lg:h-20 rounded-xl md:rounded-2xl border-3 flex items-center justify-center
               text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold touch-target transition-all duration-200
               ${slot.char
-                ? 'bg-blue-100 border-blue-400 text-blue-800 shadow-sm'
+                ? 'bg-blue-100 border-blue-400 text-blue-800 shadow-sm active:scale-90'
                 : 'bg-white/80 border-dashed border-gray-300 text-gray-400'
               }
               ${showResult && isCorrect ? 'bg-green-100 border-green-400 text-green-700 scale-105' : ''}
               ${showResult && isCorrect === false ? 'bg-red-100 border-red-400 text-red-700 animate-pulse' : ''}
             `}
+            onClick={() => { if (slot.char && !isComplete) onTapSlot(slot.index) }}
           >
             {slot.char ?? ''}
           </div>
