@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { LEVELS, getStars, SCORE } from '../config/gameConfig'
 
 interface LevelResult {
@@ -14,13 +14,72 @@ interface HelpState {
 
 export type GamePhase = 'welcome' | 'playing' | 'levelComplete' | 'allComplete'
 
+const SAVE_KEY = 'wordblast_save_v1'
+
+interface SavedState {
+  phase: GamePhase
+  levelIndex: number
+  subsectionIndex: number
+  totalScore: number
+  combo: number
+  levelResults: LevelResult[]
+  subsectionScore: number
+  subsectionCorrect: number
+  subsectionAttempts: number
+}
+
+function loadState(): SavedState | null {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    if (!data || typeof data !== 'object') return null
+    return data as SavedState
+  } catch {
+    return null
+  }
+}
+
+function saveState(state: SavedState) {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state))
+  } catch { /* quota exceeded — silently drop */ }
+}
+
+function clearState() {
+  try {
+    localStorage.removeItem(SAVE_KEY)
+  } catch { /* ignore */ }
+}
+
+function getDefault(loaded: SavedState | null): {
+  phase: GamePhase; levelIndex: number; subsectionIndex: number
+  totalScore: number; combo: number; levelResults: LevelResult[]
+  subsectionScore: number; subsectionCorrect: number; subsectionAttempts: number
+} {
+  if (!loaded) return {
+    phase: 'welcome', levelIndex: 0, subsectionIndex: 0,
+    totalScore: 0, combo: 0, levelResults: [],
+    subsectionScore: 0, subsectionCorrect: 0, subsectionAttempts: 0,
+  }
+  return {
+    phase: loaded.phase,
+    levelIndex: loaded.levelIndex ?? 0,
+    subsectionIndex: loaded.subsectionIndex ?? 0,
+    totalScore: loaded.totalScore ?? 0,
+    combo: 0, // combo always resets on load
+    levelResults: loaded.levelResults ?? [],
+    subsectionScore: 0, subsectionCorrect: 0, subsectionAttempts: 0, // subsection restarts on load
+  }
+}
+
 export function useGameProgress() {
-  const [phase, setPhase] = useState<GamePhase>('welcome')
-  const [levelIndex, setLevelIndex] = useState(0)
-  const [subsectionIndex, setSubsectionIndex] = useState(0)
-  const [totalScore, setTotalScore] = useState(0)
+  const [phase, setPhase] = useState<GamePhase>(() => getDefault(loadState()).phase)
+  const [levelIndex, setLevelIndex] = useState(() => getDefault(loadState()).levelIndex)
+  const [subsectionIndex, setSubsectionIndex] = useState(() => getDefault(loadState()).subsectionIndex)
+  const [totalScore, setTotalScore] = useState(() => getDefault(loadState()).totalScore)
   const [combo, setCombo] = useState(0)
-  const [levelResults, setLevelResults] = useState<LevelResult[]>([])
+  const [levelResults, setLevelResults] = useState<LevelResult[]>(() => getDefault(loadState()).levelResults)
   const [help, setHelp] = useState<HelpState>({ consecutiveErrors: 0, helpLevel: 0 })
   const [subsectionScore, setSubsectionScore] = useState(0)
   const [subsectionCorrect, setSubsectionCorrect] = useState(0)
@@ -119,6 +178,7 @@ export function useGameProgress() {
   }, [])
 
   const startGame = useCallback(() => {
+    clearState()
     levelCorrectRef.current = 0
     levelAttemptsRef.current = 0
     levelScoreRef.current = 0
@@ -137,6 +197,22 @@ export function useGameProgress() {
   const restartGame = useCallback(() => {
     startGame()
   }, [startGame])
+
+  /* ── Auto-save to localStorage ── */
+  useEffect(() => {
+    if (phase === 'welcome') { clearState(); return }
+    saveState({
+      phase,
+      levelIndex,
+      subsectionIndex,
+      totalScore,
+      combo,
+      levelResults,
+      subsectionScore,
+      subsectionCorrect,
+      subsectionAttempts,
+    })
+  }, [phase, levelIndex, subsectionIndex, totalScore, combo, levelResults, subsectionScore, subsectionCorrect, subsectionAttempts])
 
   const debug = {
     jumpToLevel: useCallback((idx: number) => {
@@ -173,6 +249,7 @@ export function useGameProgress() {
       setTotalScore(s)
     }, []),
     resetAll: useCallback(() => {
+      clearState()
       setPhase('welcome')
       setLevelIndex(0)
       setSubsectionIndex(0)
