@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, memo } from 'react'
 
 interface Props {
   score: number
@@ -16,7 +16,7 @@ interface Props {
 
 const HELP_LABELS = ['', '💡 首字母 -300', '💡 揭露一半 -500', '💡 跳过 -800']
 
-export function ScoreBoard({
+export const ScoreBoard = memo(function ScoreBoard({
   score, combo, levelName, levelIndex, totalLevels,
   subsectionIndex, subsectionLabel, showHelp, helpLevel, onUseHelp,
   onDebugActivate,
@@ -39,7 +39,6 @@ export function ScoreBoard({
 
   return (
     <div className="w-full bg-white rounded-3xl p-2.5 sm:p-3 md:p-4 mb-2 sm:mb-3 shadow-[0_16px_32px_rgba(0,0,0,0.06)] border-4 border-lime-200">
-      {/* 关卡信息 */}
       <div className="flex items-center justify-between mb-1.5 sm:mb-2 flex-wrap gap-1">
         <div className="flex items-center gap-1.5 sm:gap-2">
           <button
@@ -56,7 +55,6 @@ export function ScoreBoard({
         </span>
       </div>
 
-      {/* 小节进度 */}
       <div className="flex gap-1 mb-1.5 sm:mb-2">
         {[0, 1, 2].map(i => (
           <div
@@ -70,7 +68,6 @@ export function ScoreBoard({
         ))}
       </div>
 
-      {/* 分数 & Combo */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-1.5 sm:gap-2">
           <span className="text-lg sm:text-xl md:text-2xl">🏆</span>
@@ -97,4 +94,4 @@ export function ScoreBoard({
       </div>
     </div>
   )
-}
+})

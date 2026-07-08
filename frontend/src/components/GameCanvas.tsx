@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, memo } from 'react'
 
 interface Props {
   canvasRef: React.RefObject<HTMLCanvasElement | null>
@@ -6,7 +6,7 @@ interface Props {
   onResize: () => void
 }
 
-export function GameCanvas({ canvasRef, onTap, onResize }: Props) {
+export const GameCanvas = memo(function GameCanvas({ canvasRef, onTap, onResize }: Props) {
   const handlerRef = useRef(onTap)
   handlerRef.current = onTap
   const resizeRef = useRef(onResize)
@@ -42,4 +42,4 @@ export function GameCanvas({ canvasRef, onTap, onResize }: Props) {
       />
     </div>
   )
-}
+})

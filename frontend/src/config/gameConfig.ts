@@ -229,7 +229,6 @@ export const COLOR_THEMES = {
 export const SCORE = {
   match: 100,
   spell: 100,
-  cloze: 100,
   comboBonus: 50,
   helpCost: [0, 300, 500, 800] as const,
   helpScore: [0, 30, 10, 0] as const,

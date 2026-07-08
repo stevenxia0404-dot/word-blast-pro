@@ -2,9 +2,11 @@ import { preloadVoices, unlockAudio } from '../hooks/useAudio'
 
 interface Props {
   onStart: () => void
+  hasCustomVocab?: boolean
+  onOpenImport?: () => void
 }
 
-export function WelcomeOverlay({ onStart }: Props) {
+export function WelcomeOverlay({ onStart, hasCustomVocab, onOpenImport }: Props) {
   const handleStart = () => {
     preloadVoices()
     unlockAudio()
@@ -29,6 +31,15 @@ export function WelcomeOverlay({ onStart }: Props) {
         >
           PLAY (开启声音)
         </button>
+        {onOpenImport && (
+          <button
+            type="button"
+            onClick={onOpenImport}
+            className="mt-3 w-full bg-white hover:bg-lime-50 text-lime-700 font-bold text-sm py-2.5 rounded-2xl border-2 border-lime-200 transition-all active:scale-95"
+          >
+            📂 {hasCustomVocab ? '管理自定义词库' : '导入自定义词库'}
+          </button>
+        )}
       </div>
     </div>
   )

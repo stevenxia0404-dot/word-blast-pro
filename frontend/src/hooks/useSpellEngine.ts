@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import type { VocabItem, SubsectionType } from '../config/gameConfig'
 
 export interface SlotState {
@@ -44,6 +44,14 @@ function randomDistractorWords(count: number, exclude: string[], allWords: strin
 
 export function useSpellEngine() {
   const [state, setState] = useState<SpellState | null>(null)
+  const wrongRoundRef = useRef(0)
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current)
+    }
+  }, [])
 
   const initSpell = useCallback((
     item: VocabItem,
@@ -126,7 +134,11 @@ export function useSpellEngine() {
         const expected = prev.answerTokens.join(' ').toLowerCase()
         correct = userAnswer === expected
         if (!correct) {
-          setTimeout(() => {
+          wrongRoundRef.current += 1
+          const capturedRound = wrongRoundRef.current
+          if (resetTimerRef.current) clearTimeout(resetTimerRef.current)
+          resetTimerRef.current = setTimeout(() => {
+            if (wrongRoundRef.current !== capturedRound) return
             setState(s => {
               if (!s) return s
               return {

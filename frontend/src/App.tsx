@@ -1,9 +1,10 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { VOCABULARY, SCORE, getSubsections } from './config/gameConfig'
-import type { VocabItem, SubsectionType } from './config/gameConfig'
+import { VOCABULARY, LEVELS, SCORE, getSubsections } from './config/gameConfig'
+import type { VocabItem, SubsectionType, LevelConfig } from './config/gameConfig'
 import { useGameEngine } from './hooks/useGameEngine'
 import { useSpellEngine } from './hooks/useSpellEngine'
 import { useGameProgress } from './hooks/useGameProgress'
+import { useCustomVocab } from './hooks/useCustomVocab'
 import { preloadVoices, unlockAudio, speakWord } from './hooks/useAudio'
 import { WelcomeOverlay } from './components/WelcomeOverlay'
 import { ScoreBoard } from './components/ScoreBoard'
@@ -13,11 +14,22 @@ import { StatusBar } from './components/StatusBar'
 import { Certificate } from './components/Certificate'
 import { DebugPanel } from './components/DebugPanel'
 import { GuidePage } from './components/GuidePage'
+import { LevelCompleteOverlay } from './components/LevelCompleteOverlay'
+import { VersionBanner } from './components/VersionBanner'
+import { WordImport } from './components/WordImport'
+import { FeedbackForm } from './components/FeedbackForm'
+
+/** For built-in levels use original logic; custom levels (>13) default to word mode */
+function resolveSubsections(level: LevelConfig) {
+  return getSubsections(level.id <= 13 ? level.id : 1)
+}
 
 function App() {
   const { canvasRef, setupCanvas, initGame, startRender, stopRender, handleTap } = useGameEngine()
   const { state: spellState, initSpell, tapCandidate, tapSlot, revealHelp } = useSpellEngine()
-  const prog = useGameProgress()
+  const { customVocab, customLevels, hasCustom, customCount, importVocab, clearVocab } = useCustomVocab()
+  const activeLevels = customLevels ?? LEVELS
+  const prog = useGameProgress(customLevels)
 
   const [wordQueue, setWordQueue] = useState<VocabItem[]>([])
   const [currentWordIdx, setCurrentWordIdx] = useState(0)
@@ -26,19 +38,27 @@ function App() {
   const [spellResult, setSpellResult] = useState<boolean | null>(null)
   const [debugOpen, setDebugOpen] = useState(false)
   const [showGuide, setShowGuide] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
+  const [showWordImport, setShowWordImport] = useState(false)
   const subsectionInitedRef = useRef('')
+  const matchInitedRef = useRef('')
+  const spellInitedRef = useRef('')
   const subsectionRef = useRef(prog.subsectionIndex)
   subsectionRef.current = prog.subsectionIndex
 
+  const activeVocab = customVocab ?? VOCABULARY
   const level = prog.currentLevel
-  const subsections = level ? getSubsections(level.id) : []
+  const subsections = level ? resolveSubsections(level) : []
   const currentSub = subsections[prog.subsectionIndex]
-  const levelVocab = level ? level.wordIds.map(id => VOCABULARY.find(v => v.id === id)!).filter(Boolean) : []
+  const levelVocab = level ? level.wordIds.map(id => activeVocab.find(v => v.id === id)!).filter(Boolean) : []
 
   /* ── Welcome → start ── */
   const handleWelcomeStart = useCallback(() => {
     preloadVoices()
     unlockAudio()
+    subsectionInitedRef.current = ''
+    matchInitedRef.current = ''
+    spellInitedRef.current = ''
     prog.startGame()
   }, [prog.startGame])
 
@@ -76,7 +96,6 @@ function App() {
   }, [prog.phase, prog.levelIndex, prog.subsectionIndex])
 
   /* ── Init match canvas ── (after subsectionType committed, canvas is mounted) */
-  const matchInitedRef = useRef('')
   useEffect(() => {
     if (prog.phase !== 'playing' || !level) return
     if (subsectionType !== 'match') return
@@ -98,7 +117,6 @@ function App() {
   }, [subsectionType, prog.phase, prog.levelIndex, prog.subsectionIndex])
 
   /* ── Init spell/cloze queue ── (after DOM commit) */
-  const spellInitedRef = useRef('')
   useEffect(() => {
     if (prog.phase !== 'playing' || !level) return
     if (subsectionType === 'match') return
@@ -118,7 +136,7 @@ function App() {
     if (wordQueue.length === 0) return
     if (currentWordIdx >= wordQueue.length) return
     const item = wordQueue[currentWordIdx]
-    initSpell(item, subsectionType, VOCABULARY, prog.help.helpLevel)
+    initSpell(item, subsectionType, activeVocab, prog.help.helpLevel)
     setShowHelpBtn(false)
     setSpellResult(null)
   }, [currentWordIdx, wordQueue, subsectionType])
@@ -130,15 +148,6 @@ function App() {
       revealHelp(prog.help.helpLevel)
     }
   }, [prog.help.helpLevel])
-
-  /* ── Spell candidate tap ── */
-  const handleTapCandidate = useCallback((c: string) => {
-    tapCandidate(c)
-  }, [tapCandidate])
-
-  const handleTapSlot = useCallback((index: number) => {
-    tapSlot(index)
-  }, [tapSlot])
 
   /* ── Watch spell result ── */
   useEffect(() => {
@@ -183,14 +192,34 @@ function App() {
     prog.restartGame()
   }, [prog.restartGame])
 
+  const handleClearCustom = useCallback(() => {
+    clearVocab()
+    prog.restartGame()
+  }, [clearVocab, prog.restartGame])
+
   const totalStars = prog.levelResults.reduce((sum, r) => sum + r.stars, 0)
 
   return (
     <>
+      <VersionBanner onConfirm={() => {}} />
+      {showWordImport && (
+        <WordImport
+          hasCustomVocab={hasCustom}
+          customCount={customCount}
+          customVocab={customVocab}
+          onImport={(vocab, levels) => { importVocab(vocab, levels); setShowWordImport(false) }}
+          onClear={handleClearCustom}
+          onClose={() => setShowWordImport(false)}
+        />
+      )}
       <div className="w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto flex flex-col items-center relative min-h-[100dvh] px-3 sm:px-4 md:px-6 pt-2 pb-6">
       {/* Welcome */}
       {prog.phase === 'welcome' && (
-        <WelcomeOverlay onStart={handleWelcomeStart} />
+        <WelcomeOverlay
+          onStart={handleWelcomeStart}
+          hasCustomVocab={hasCustom}
+          onOpenImport={() => setShowWordImport(true)}
+        />
       )}
 
       {/* Playing + LevelComplete */}
@@ -218,8 +247,8 @@ function App() {
                 state={spellState}
                 helpLevel={prog.help.helpLevel}
                 showHelp={showHelpBtn}
-                onTapCandidate={handleTapCandidate}
-                onTapSlot={handleTapSlot}
+                onTapCandidate={tapCandidate}
+                onTapSlot={tapSlot}
                 onUseHelp={prog.useHelp}
               />
               {spellResult !== null && (
@@ -239,28 +268,11 @@ function App() {
 
           {/* Level complete overlay */}
           {prog.phase === 'levelComplete' && (
-            <div className="absolute inset-0 bg-white/80 z-40 flex items-center justify-center">
-              <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl border-4 border-lime-300 text-center max-w-xs w-full">
-                <h2 className="text-3xl bubbly-font text-emerald-600 mb-3">关卡通过！</h2>
-                <div className="flex justify-center gap-2 mb-4 text-4xl">
-                  {[0, 1, 2].map(i => (
-                    <span key={i} className={i < (prog.levelResults[prog.levelIndex]?.stars ?? 1) ? '' : 'opacity-30 grayscale'}>
-                      ⭐
-                    </span>
-                  ))}
-                </div>
-                <p className="text-gray-500 mb-6">
-                  准确率: {prog.levelResults[prog.levelIndex]?.accuracy ?? prog.accuracy}%
-                </p>
-                <button
-                  type="button"
-                  onClick={handleNextLevel}
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xl py-4 rounded-2xl bubbly-font transition-all active:scale-95"
-                >
-                  下一关
-                </button>
-              </div>
-            </div>
+            <LevelCompleteOverlay
+              stars={prog.levelResults[prog.levelIndex]?.stars ?? 1}
+              accuracy={prog.levelResults[prog.levelIndex]?.accuracy ?? prog.accuracy}
+              onNext={handleNextLevel}
+            />
           )}
         </>
       )}
@@ -301,23 +313,36 @@ function App() {
       {showGuide && (
         <GuidePage onClose={() => setShowGuide(false)} />
       )}
+
+      {/* Feedback Form */}
+      {showFeedback && (
+        <FeedbackForm onClose={() => setShowFeedback(false)} />
+      )}
     </div>
 
-    {/* Guide button — outside container, on green background */}
+    {/* Guide button */}
     {(prog.phase === 'welcome' || prog.phase === 'playing') && !showGuide && (
       <button
         type="button"
         onClick={() => setShowGuide(true)}
-        className="fixed top-4 right-4 z-30 w-11 h-11 bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] flex items-center justify-center text-xl font-bold text-gray-600 hover:text-emerald-600 transition-all active:scale-90"
+        className="fixed top-2 right-2 sm:top-4 sm:right-4 z-30 w-9 h-9 sm:w-11 sm:h-11 bg-white/80 backdrop-blur-sm rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] flex items-center justify-center text-lg sm:text-xl font-bold text-gray-600 hover:text-emerald-600 transition-all active:scale-90"
         aria-label="使用说明"
       >
         ?
       </button>
     )}
 
-    <div className="hidden">{
-      // dummy element to keep the fragment structure valid
-    }</div>
+    {/* Feedback button — bottom right */}
+    {(prog.phase === 'welcome' || prog.phase === 'playing') && !showFeedback && (
+      <button
+        type="button"
+        onClick={() => setShowFeedback(true)}
+        className="fixed bottom-6 right-4 z-30 bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] px-3 py-2 flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-amber-600 transition-all active:scale-90"
+        aria-label="反馈"
+      >
+        💬 反馈
+      </button>
+    )}
     </>
   )
 }

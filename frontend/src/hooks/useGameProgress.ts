@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { LEVELS, getStars, SCORE } from '../config/gameConfig'
+import type { LevelConfig } from '../config/gameConfig'
 
 interface LevelResult {
   stars: number
@@ -73,13 +74,15 @@ function getDefault(loaded: SavedState | null): {
   }
 }
 
-export function useGameProgress() {
-  const [phase, setPhase] = useState<GamePhase>(() => getDefault(loadState()).phase)
-  const [levelIndex, setLevelIndex] = useState(() => getDefault(loadState()).levelIndex)
-  const [subsectionIndex, setSubsectionIndex] = useState(() => getDefault(loadState()).subsectionIndex)
-  const [totalScore, setTotalScore] = useState(() => getDefault(loadState()).totalScore)
+export function useGameProgress(customLevels?: LevelConfig[] | null) {
+  const activeLevels = customLevels?.length ? customLevels : LEVELS
+  const defaultState = getDefault(loadState())
+  const [phase, setPhase] = useState<GamePhase>(defaultState.phase)
+  const [levelIndex, setLevelIndex] = useState(defaultState.levelIndex)
+  const [subsectionIndex, setSubsectionIndex] = useState(defaultState.subsectionIndex)
+  const [totalScore, setTotalScore] = useState(defaultState.totalScore)
   const [combo, setCombo] = useState(0)
-  const [levelResults, setLevelResults] = useState<LevelResult[]>(() => getDefault(loadState()).levelResults)
+  const [levelResults, setLevelResults] = useState<LevelResult[]>(defaultState.levelResults)
   const [help, setHelp] = useState<HelpState>({ consecutiveErrors: 0, helpLevel: 0 })
   const [subsectionScore, setSubsectionScore] = useState(0)
   const [subsectionCorrect, setSubsectionCorrect] = useState(0)
@@ -89,12 +92,23 @@ export function useGameProgress() {
   const levelAttemptsRef = useRef(0)
   const levelScoreRef = useRef(0)
 
-  const currentLevel = LEVELS[levelIndex]
-  const totalLevels = LEVELS.length
+  const currentLevel = activeLevels[levelIndex]
+  const totalLevels = activeLevels.length
   const isLastLevel = levelIndex >= totalLevels - 1
 
   const accuracy = subsectionAttempts === 0 ? 100
     : Math.round((subsectionCorrect / subsectionAttempts) * 100)
+
+  const resetProgress = useCallback(() => {
+    setCombo(0)
+    setHelp({ consecutiveErrors: 0, helpLevel: 0 })
+    setSubsectionScore(0)
+    setSubsectionCorrect(0)
+    setSubsectionAttempts(0)
+    levelCorrectRef.current = 0
+    levelAttemptsRef.current = 0
+    levelScoreRef.current = 0
+  }, [])
 
   const addCorrect = useCallback((baseScore: number) => {
     const bonus = combo * SCORE.comboBonus
@@ -179,20 +193,13 @@ export function useGameProgress() {
 
   const startGame = useCallback(() => {
     clearState()
-    levelCorrectRef.current = 0
-    levelAttemptsRef.current = 0
-    levelScoreRef.current = 0
+    resetProgress()
     setPhase('playing')
     setLevelIndex(0)
     setSubsectionIndex(0)
     setTotalScore(0)
-    setCombo(0)
     setLevelResults([])
-    setHelp({ consecutiveErrors: 0, helpLevel: 0 })
-    setSubsectionScore(0)
-    setSubsectionCorrect(0)
-    setSubsectionAttempts(0)
-  }, [])
+  }, [resetProgress])
 
   const restartGame = useCallback(() => {
     startGame()
@@ -216,32 +223,18 @@ export function useGameProgress() {
 
   const debug = {
     jumpToLevel: useCallback((idx: number) => {
-      if (idx < 0 || idx >= LEVELS.length) return
+      if (idx < 0 || idx >= activeLevels.length) return
+      resetProgress()
       setLevelIndex(idx)
       setSubsectionIndex(0)
       setPhase('playing')
-      setCombo(0)
-      setHelp({ consecutiveErrors: 0, helpLevel: 0 })
-      setSubsectionScore(0)
-      setSubsectionCorrect(0)
-      setSubsectionAttempts(0)
-      levelCorrectRef.current = 0
-      levelAttemptsRef.current = 0
-      levelScoreRef.current = 0
-    }, []),
+    }, [resetProgress]),
     jumpToSubsection: useCallback((idx: number) => {
       if (idx < 0 || idx > 2) return
+      resetProgress()
       setSubsectionIndex(idx)
       setPhase('playing')
-      setCombo(0)
-      setHelp({ consecutiveErrors: 0, helpLevel: 0 })
-      setSubsectionScore(0)
-      setSubsectionCorrect(0)
-      setSubsectionAttempts(0)
-      levelCorrectRef.current = 0
-      levelAttemptsRef.current = 0
-      levelScoreRef.current = 0
-    }, []),
+    }, [resetProgress]),
     jumpToPhase: useCallback((p: GamePhase) => {
       setPhase(p)
     }, []),
@@ -250,20 +243,13 @@ export function useGameProgress() {
     }, []),
     resetAll: useCallback(() => {
       clearState()
+      resetProgress()
       setPhase('welcome')
       setLevelIndex(0)
       setSubsectionIndex(0)
       setTotalScore(0)
-      setCombo(0)
       setLevelResults([])
-      setHelp({ consecutiveErrors: 0, helpLevel: 0 })
-      setSubsectionScore(0)
-      setSubsectionCorrect(0)
-      setSubsectionAttempts(0)
-      levelCorrectRef.current = 0
-      levelAttemptsRef.current = 0
-      levelScoreRef.current = 0
-    }, []),
+    }, [resetProgress]),
   }
 
   return {

@@ -1,6 +1,7 @@
-import { useRef, useCallback, useState } from 'react'
+import { useRef, useCallback, useState, useEffect } from 'react'
 import { Particle } from '../components/Particle'
 import { playSoftTone, speakWord } from './useAudio'
+import { COLOR_THEMES } from '../config/gameConfig'
 import type { VocabItem } from '../config/gameConfig'
 
 export interface Cell {
@@ -32,8 +33,18 @@ export function useGameEngine() {
   const onCorrectRef = useRef<(() => void) | null>(null)
   const onWrongRef = useRef<(() => void) | null>(null)
   const onAllMatchedRef = useRef<(() => void) | null>(null)
+  const shakeTimersRef = useRef<Set<ReturnType<typeof setInterval>>>(new Set())
 
   const [allMatched, setAllMatched] = useState(false)
+
+  const clearShakeTimers = useCallback(() => {
+    shakeTimersRef.current.forEach(id => clearInterval(id))
+    shakeTimersRef.current.clear()
+  }, [])
+
+  useEffect(() => {
+    return () => clearShakeTimers()
+  }, [clearShakeTimers])
 
   const setupCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -166,13 +177,6 @@ export function useGameEngine() {
     if (prevSel.r === clicked.r && prevSel.c === clicked.c) { selectedRef.current = null; return }
 
     const prev = gridRef.current[prevSel.r][prevSel.c]
-    const COLOR_THEMES = {
-      enBg: '#eff6ff', enBorder: '#bfdbfe', enText: '#1e40af',
-      zhBg: '#fff7ed', zhBorder: '#fed7aa', zhText: '#9a3412',
-      selectedBg: '#84cc16', selectedBorder: '#a3e635', selectedText: '#ffffff',
-      matchedBg: '#22c55e',
-    }
-
     if (prev.pairId === cur.pairId && prev.type !== cur.type) {
       prev.isEliminated = true
       cur.isEliminated = true
@@ -200,9 +204,10 @@ export function useGameEngine() {
         if (!t) return
         const start = Date.now()
         const timer = setInterval(() => {
-          if (Date.now() - start > 250) { t.shakeOffset = 0; clearInterval(timer) }
+          if (Date.now() - start > 250) { t.shakeOffset = 0; clearInterval(timer); shakeTimersRef.current.delete(timer) }
           else t.shakeOffset = Math.sin((Date.now() - start) / 15) * 5
         }, 16)
+        shakeTimersRef.current.add(timer)
       })
       selectedRef.current = null
     }
@@ -235,17 +240,51 @@ export function useGameEngine() {
         ctx.strokeStyle = isSel ? '#a3e635' : (isEn ? '#bfdbfe' : '#fed7aa')
         ctx.lineWidth = 3
         ctx.beginPath()
-        ;(ctx as any).roundRect?.(t.x + t.shakeOffset, t.y, tw, th, 16)
-          ?? ctx.rect(t.x + t.shakeOffset, t.y, tw, th)
+        if ('roundRect' in ctx && typeof (ctx as any).roundRect === 'function') {
+          (ctx as any).roundRect(t.x + t.shakeOffset, t.y, tw, th, 14)
+        } else {
+          ctx.rect(t.x + t.shakeOffset, t.y, tw, th)
+        }
         ctx.fill(); ctx.stroke(); ctx.restore()
 
         ctx.save()
         ctx.fillStyle = isSel ? '#ffffff' : (isEn ? '#1e40af' : '#9a3412')
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-        let fs = 20
+        const padX = 10
+        const maxW = tw - padX * 2
+        let fs = 18
         ctx.font = `bold ${fs}px Quicksand, "PingFang SC", sans-serif`
-        while (ctx.measureText(t.text).width > tw - 16 && fs > 11) { fs--; ctx.font = `bold ${fs}px Quicksand, "PingFang SC", sans-serif` }
-        ctx.fillText(t.text, t.x + tw / 2 + t.shakeOffset, t.y + th / 2)
+        while (ctx.measureText(t.text).width > maxW && fs > 10) { fs--; ctx.font = `bold ${fs}px Quicksand, "PingFang SC", sans-serif` }
+
+        if (ctx.measureText(t.text).width <= maxW) {
+          ctx.fillText(t.text, t.x + tw / 2 + t.shakeOffset, t.y + th / 2)
+        } else {
+          // Multi-line wrap for long text
+          const words = t.text.split(' ')
+          const lines: string[] = []
+          let line = ''
+          for (const w of words) {
+            const test = line ? line + ' ' + w : w
+            if (ctx.measureText(test).width > maxW) {
+              if (line) lines.push(line)
+              line = w
+            } else {
+              line = test
+            }
+          }
+          if (line) lines.push(line)
+          const maxLines = 3
+          if (lines.length > maxLines) {
+            lines.splice(maxLines)
+            lines[maxLines - 1] = lines[maxLines - 1].slice(0, -1) + '…'
+          }
+          const lh = fs * 1.35
+          const totalH = lines.length * lh
+          const startY = t.y + (th - totalH) / 2 + lh / 2
+          lines.forEach((ln, i) => {
+            ctx.fillText(ln, t.x + tw / 2 + t.shakeOffset, startY + i * lh)
+          })
+        }
         ctx.restore()
       }
     }
@@ -264,7 +303,8 @@ export function useGameEngine() {
 
   const stopRender = useCallback(() => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
-  }, [])
+    clearShakeTimers()
+  }, [clearShakeTimers])
 
   return { canvasRef, allMatched, setupCanvas, initGame, startRender, stopRender, handleTap }
 }

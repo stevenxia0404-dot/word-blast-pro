@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, memo } from 'react'
 import type { SpellState } from '../hooks/useSpellEngine'
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
   onUseHelp: () => void
 }
 
-export function SpellCanvas({ state, helpLevel, showHelp, onTapCandidate, onTapSlot, onUseHelp }: Props) {
+export const SpellCanvas = memo(function SpellCanvas({ state, helpLevel, showHelp, onTapCandidate, onTapSlot, onUseHelp }: Props) {
   const prevCorrectRef = useRef<boolean | null>(null)
 
   useEffect(() => {
@@ -101,4 +101,4 @@ export function SpellCanvas({ state, helpLevel, showHelp, onTapCandidate, onTapS
       )}
     </div>
   )
-}
+})
