@@ -37,8 +37,6 @@ export function WordImport({ hasCustomVocab, customCount, customVocab, onImport,
 
   const handleBackToEdit = () => {
     if (!preview) return
-    // Find first problem item for quick navigation
-    const firstProblem = preview.items.find(item => item.confidence === 'low')
     const firstError = preview.errors.length > 0
     setPreview(null)
 

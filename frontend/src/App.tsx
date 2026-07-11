@@ -28,7 +28,6 @@ function App() {
   const { canvasRef, setupCanvas, initGame, startRender, stopRender, handleTap } = useGameEngine()
   const { state: spellState, initSpell, tapCandidate, tapSlot, revealHelp } = useSpellEngine()
   const { customVocab, customLevels, hasCustom, customCount, importVocab, clearVocab } = useCustomVocab()
-  const activeLevels = customLevels ?? LEVELS
   const prog = useGameProgress(customLevels)
 
   const [wordQueue, setWordQueue] = useState<VocabItem[]>([])

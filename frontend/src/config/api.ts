@@ -1,11 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_BASE || ''
 const API_KEY = import.meta.env.VITE_API_KEY || ''
 
-const headers = {
-  'Content-Type': 'application/json',
-  'X-API-Key': API_KEY,
-}
-
 export async function submitFeedback(name: string, message: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/api/feedback`, {
