@@ -7,10 +7,6 @@ function json(data, status = 200) {
   })
 }
 
-function getApiKey(request) {
-  return request.headers.get('X-API-Key') || new URL(request.url).searchParams.get('key')
-}
-
 function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
@@ -46,48 +42,41 @@ button{margin-top:.75rem;padding:.75rem 2rem;background:#22c55e;color:#fff;borde
 <button type="submit">进入</button></form></body></html>`
 }
 
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url)
-    const path = url.pathname
+export async function onRequest({ request, env }) {
+  const url = new URL(request.url)
+  const path = url.pathname
 
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-API-Key' } })
-    }
-
-    // POST /api/feedback — submit (public)
-    if (path === '/api/feedback' && request.method === 'POST') {
-      try {
-        const body = await request.json()
-        const name = (body.name || '').slice(0, 50) || '匿名'
-        const message = (body.message || '').slice(0, 2000)
-        if (!message.trim()) return json({ error: 'empty' }, 400)
-        await env.DB.prepare('INSERT INTO feedback (name, message) VALUES (?, ?)').bind(name, message).run()
-        return json({ ok: true })
-      } catch (e) {
-        return json({ error: '提交失败' }, 500)
-      }
-    }
-
-    // GET /api/feedback — admin page
-    if (path === '/api/feedback' && request.method === 'GET') {
-      const key = getApiKey(request)
-      if (!key || key !== API_KEY) {
-        return new Response(loginHtml(), { headers: { 'Content-Type': 'text/html;charset=utf-8' } })
-      }
-
-      const { results } = await env.DB.prepare('SELECT id, name, message, created_at FROM feedback ORDER BY created_at DESC LIMIT 500').all()
-
-      if (url.searchParams.get('format') === 'csv') {
-        const bom = '﻿'
-        const rows = results.map(r => `${r.id},"${(r.name||'').replace(/"/g,'""')}","${(r.message||'').replace(/"/g,'""')}","${r.created_at}"`)
-        return new Response(bom + 'id,name,message,created_at\n' + rows.join('\n'), { headers: { 'Content-Type': 'text/csv;charset=utf-8' } })
-      }
-
-      return new Response(adminHtml(results, key), { headers: { 'Content-Type': 'text/html;charset=utf-8' } })
-    }
-
-    // Pass through to static assets
-    return env.ASSETS.fetch(request)
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-API-Key' } })
   }
+
+  // POST /api/feedback — submit (public)
+  if (request.method === 'POST') {
+    try {
+      const body = await request.json()
+      const name = (body.name || '').slice(0, 50) || '匿名'
+      const message = (body.message || '').slice(0, 2000)
+      if (!message.trim()) return json({ error: 'empty' }, 400)
+      await env.DB.prepare('INSERT INTO feedback (name, message) VALUES (?, ?)').bind(name, message).run()
+      return json({ ok: true })
+    } catch (e) {
+      return json({ error: '提交失败' }, 500)
+    }
+  }
+
+  // GET /api/feedback — admin page
+  const key = url.searchParams.get('key') || ''
+  if (!key || key !== API_KEY) {
+    return new Response(loginHtml(), { headers: { 'Content-Type': 'text/html;charset=utf-8' } })
+  }
+
+  const { results } = await env.DB.prepare('SELECT id, name, message, created_at FROM feedback ORDER BY created_at DESC LIMIT 500').all()
+
+  if (url.searchParams.get('format') === 'csv') {
+    const bom = '﻿'
+    const rows = results.map(r => `${r.id},"${(r.name||'').replace(/"/g,'""')}","${(r.message||'').replace(/"/g,'""')}","${r.created_at}"`)
+    return new Response(bom + 'id,name,message,created_at\n' + rows.join('\n'), { headers: { 'Content-Type': 'text/csv;charset=utf-8' } })
+  }
+
+  return new Response(adminHtml(results, key), { headers: { 'Content-Type': 'text/html;charset=utf-8' } })
 }
