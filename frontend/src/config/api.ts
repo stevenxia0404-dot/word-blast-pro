@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://word-blast-api.boluomate.com'
+const API_BASE = import.meta.env.VITE_API_BASE || ''
 const API_KEY = import.meta.env.VITE_API_KEY || ''
 
 const headers = {
