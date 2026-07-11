@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { VOCABULARY, LEVELS, SCORE, getSubsections } from './config/gameConfig'
+import { VOCABULARY, SCORE, getSubsections } from './config/gameConfig'
 import type { VocabItem, SubsectionType, LevelConfig } from './config/gameConfig'
 import { useGameEngine } from './hooks/useGameEngine'
 import { useSpellEngine } from './hooks/useSpellEngine'
