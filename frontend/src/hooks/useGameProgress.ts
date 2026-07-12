@@ -228,7 +228,7 @@ export function useGameProgress(customLevels?: LevelConfig[] | null) {
       setLevelIndex(idx)
       setSubsectionIndex(0)
       setPhase('playing')
-    }, [resetProgress]),
+    }, [activeLevels, resetProgress]),
     jumpToSubsection: useCallback((idx: number) => {
       if (idx < 0 || idx > 2) return
       resetProgress()
