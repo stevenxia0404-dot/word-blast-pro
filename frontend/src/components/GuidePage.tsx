@@ -63,11 +63,6 @@ export function GuidePage({ onClose }: Props) {
           <p>系统会自动清洗排版，点「解析预览」确认就能用。每 10 个单词自动生成一关。</p>
         </Section>
 
-        <Section emoji="💾" title="数据存储">
-          <p>学习进度和词库保存在<strong>当前设备的浏览器</strong>中，不上传任何服务器。</p>
-          <p className="text-amber-700">⚠️ 换用其他手机/平板/iPad，或同一设备换浏览器，都需要重新导入词库。</p>
-        </Section>
-
         <Section emoji="💬" title="反馈">
           <p>游戏内右下角有 <strong>「💬 反馈」</strong>按钮，欢迎提交建议或遇到的问题。</p>
           <p>无需注册，提交失败时自动本地保存，不会丢失。</p>
@@ -96,11 +91,9 @@ export function GuidePage({ onClose }: Props) {
           <p><strong>完全免费，无广告，无内购</strong>。</p>
         </Section>
 
-        <Section emoji="📲" title="添加到主屏幕">
-          <p>添加到主屏幕后可像普通 App 一样使用，<strong>无需网络</strong>，一键打开。</p>
-          <p><strong>🍎 iPhone / iPad：</strong>Safari 浏览器点击底部「分享」按钮（方框↑箭头图标）→ 往下滑找到<strong>「添加到主屏幕」</strong>→ 点右上角「添加」</p>
-          <p><strong>🤖 安卓手机 / 平板：</strong>Chrome 浏览器点击右上角 ⋮ 菜单 →<strong>「添加到主屏幕」</strong>或「安装应用」</p>
-          <p><strong>💻 电脑：</strong>Chrome / Edge 地址栏右侧点 ⊕ 图标即可安装</p>
+        <Section emoji="💾" title="数据存储">
+          <p>学习进度和词库保存在<strong>当前设备的浏览器</strong>中，不上传任何服务器。</p>
+          <p className="text-amber-700">⚠️ 换用其他手机/平板/iPad，或同一设备换浏览器，都需要重新导入词库。</p>
         </Section>
 
         <Section emoji="🚀" title="怎么开始">
@@ -115,6 +108,13 @@ export function GuidePage({ onClose }: Props) {
               PLAY (开始学习)
             </button>
           </div>
+        </Section>
+
+        <Section emoji="📲" title="添加到主屏幕">
+          <p>添加到主屏幕后可像普通 App 一样使用，<strong>无需网络</strong>，一键打开。</p>
+          <p><strong>🍎 iPhone / iPad：</strong>Safari 浏览器点击底部「分享」按钮（方框↑箭头图标）→ 往下滑找到<strong>「添加到主屏幕」</strong>→ 点右上角「添加」</p>
+          <p><strong>🤖 安卓手机 / 平板：</strong>Chrome 浏览器点击右上角 ⋮ 菜单 →<strong>「添加到主屏幕」</strong>或「安装应用」</p>
+          <p><strong>💻 电脑：</strong>Chrome / Edge 地址栏右侧点 ⊕ 图标即可安装</p>
         </Section>
       </div>
 
