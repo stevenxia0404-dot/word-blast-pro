@@ -21,8 +21,8 @@ export function WelcomeOverlay({ onStart, hasCustomVocab, onOpenImport }: Props)
         <p className="text-emerald-600 font-semibold mt-1 mb-4 sm:mb-6 text-sm sm:text-base md:text-lg">中英单词学习大冒险</p>
         <div className="bg-emerald-50 rounded-2xl p-3 sm:p-4 text-xs sm:text-sm md:text-base text-emerald-800 text-left mb-4 sm:mb-6 leading-relaxed border border-emerald-100">
           💡 <strong>玩法提示：</strong><br />
-          每关3个小节：配对消消 → 字母拼写 → 完形填空。<br />
-          通关12关即可获得毕业证书！
+          每关包含配对、拼写、填空等不同玩法，逐关挑战。<br />
+          全部通关即可获得毕业证书！
         </div>
         <button
           type="button"
