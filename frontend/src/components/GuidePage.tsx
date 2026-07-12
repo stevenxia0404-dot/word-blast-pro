@@ -96,14 +96,16 @@ export function GuidePage({ onClose }: Props) {
           <p><strong>完全免费，无广告，无内购</strong>。</p>
         </Section>
 
-        <Section emoji="📱" title="设备兼容">
-          <p>支持 <strong>手机 / 平板 / 电脑</strong>，推荐 iPad 横屏使用体验最佳。</p>
-          <p>添加到主屏幕后可像普通 App 一样使用，<strong>无需网络</strong>。</p>
+        <Section emoji="📲" title="添加到主屏幕">
+          <p>添加到主屏幕后可像普通 App 一样使用，<strong>无需网络</strong>，一键打开。</p>
+          <p><strong>🍎 iPhone / iPad：</strong>Safari 浏览器点击底部「分享」按钮（方框↑箭头图标）→ 往下滑找到<strong>「添加到主屏幕」</strong>→ 点右上角「添加」</p>
+          <p><strong>🤖 安卓手机 / 平板：</strong>Chrome 浏览器点击右上角 ⋮ 菜单 →<strong>「添加到主屏幕」</strong>或「安装应用」</p>
+          <p><strong>💻 电脑：</strong>Chrome / Edge 地址栏右侧点 ⊕ 图标即可安装</p>
         </Section>
 
         <Section emoji="🚀" title="怎么开始">
           <p>浏览器打开 <strong className="text-emerald-600">word.boluomate.com</strong></p>
-          <p>iPad / iPhone 建议：分享按钮 → <strong>添加到主屏幕</strong>，之后一键打开。</p>
+          <p>推荐 iPad 横屏使用体验最佳。</p>
           <div className="mt-3 bg-emerald-50 rounded-xl p-3 text-center border border-emerald-100">
             <button
               type="button"
