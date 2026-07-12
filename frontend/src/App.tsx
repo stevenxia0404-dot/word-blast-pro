@@ -319,28 +319,26 @@ function App() {
       )}
     </div>
 
-    {/* Guide button */}
-    {(prog.phase === 'welcome' || prog.phase === 'playing') && !showGuide && (
-      <button
-        type="button"
-        onClick={() => setShowGuide(true)}
-        className="fixed top-2 right-2 sm:top-4 sm:right-4 z-30 w-9 h-9 sm:w-11 sm:h-11 bg-white/80 backdrop-blur-sm rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] flex items-center justify-center text-lg sm:text-xl font-bold text-gray-600 hover:text-emerald-600 transition-all active:scale-90"
-        aria-label="使用说明"
-      >
-        ?
-      </button>
-    )}
-
-    {/* Feedback button — bottom right */}
-    {(prog.phase === 'welcome' || prog.phase === 'playing') && !showFeedback && (
-      <button
-        type="button"
-        onClick={() => setShowFeedback(true)}
-        className="fixed bottom-6 right-4 z-30 bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] px-3 py-2 flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-amber-600 transition-all active:scale-90"
-        aria-label="反馈"
-      >
-        💬 反馈
-      </button>
+    {/* Guide + Feedback buttons — bottom right */}
+    {(prog.phase === 'welcome' || prog.phase === 'playing') && !showGuide && !showFeedback && (
+      <div className="fixed bottom-6 right-4 z-[60] flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setShowGuide(true)}
+          className="w-9 h-9 sm:w-11 sm:h-11 bg-white/80 backdrop-blur-sm rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] flex items-center justify-center text-lg sm:text-xl font-bold text-gray-600 hover:text-emerald-600 transition-all active:scale-90"
+          aria-label="使用说明"
+        >
+          ?
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowFeedback(true)}
+          className="bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] px-3 py-2 flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-amber-600 transition-all active:scale-90"
+          aria-label="反馈"
+        >
+          💬 反馈
+        </button>
+      </div>
     )}
     </>
   )
