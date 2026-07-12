@@ -1,16 +1,26 @@
 import { useState } from 'react'
 
 const BANNER_KEY = 'wordblast_banner_v1'
-const BANNER_VERSION = 'v1.1'
+const BANNER_VERSION = 'v2.0'
 
-const BANNER_MSG = `🎉 单词大爆炸 v1.1
+const BANNER_MSG = `Word Blast 更新
 
-· 词库扩容至 125 条 (U1-U10)
-· 游戏进度自动保存，不怕丢分
-· 填空格子支持点击清空，允许纠错
-· iOS 音频修复，告别无声游戏
-· 新增使用说明页面
-· 界面优化，触控体验提升`
+1. 使用说明页改版
+点击右下角「?」查看。新增了自定义词库、数据存储、添加到主屏幕等实用章节。
+
+2. 添加到主屏幕
+说明页提供了 iPhone / 安卓 / 电脑的操作步骤。添加后可像普通 App 一样使用，离线也能打开。
+
+3. 自定义词库
+支持粘贴文本或上传文件导入单词，从课本、PDF、网页复制的内容会自动清洗解析。
+
+4. 数据存储
+学习进度和词库保存在当前设备上，不上传服务器。更换设备需重新导入词库。
+
+5. 反馈通道
+右下角「💬 反馈」按钮，欢迎提交建议和问题。
+
+访问 word.boluomate.com 即可使用。`
 
 interface Props {
   onConfirm: () => void

@@ -120,6 +120,7 @@ export function GuidePage({ onClose }: Props) {
       </div>
 
       <div className="h-8" />
+      <p className="text-center text-white/60 text-xs pb-6">v2.0</p>
     </div>
   )
 }

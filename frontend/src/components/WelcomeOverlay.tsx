@@ -43,6 +43,7 @@ export function WelcomeOverlay({ onStart, hasCustomVocab, onOpenImport }: Props)
             <p className="text-xs text-lime-600 mt-1">（词库保存在当前设备上）</p>
           </>
         )}
+        <p className="text-xs text-emerald-400 mt-3">v2.0</p>
       </div>
     </div>
   )
