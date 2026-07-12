@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { LEVELS, TITLES, getSubsections } from '../config/gameConfig'
+import { TITLES, getSubsections } from '../config/gameConfig'
 import type { GamePhase } from '../hooks/useGameProgress'
+import type { LevelConfig } from '../config/gameConfig'
 
 interface Props {
   phase: GamePhase
@@ -14,6 +15,8 @@ interface Props {
   helpConsecutiveErrors: number
   helpLevel: number
   stars: number
+  totalLevels: number
+  activeLevels: LevelConfig[]
   onJumpLevel: (idx: number) => void
   onJumpSubsection: (idx: number) => void
   onJumpPhase: (p: GamePhase) => void
@@ -32,11 +35,11 @@ const PHASES: { key: GamePhase; label: string }[] = [
 export function DebugPanel({
   phase, levelIndex, subsectionIndex, totalScore, combo, accuracy,
   subsectionCorrect, subsectionAttempts, helpConsecutiveErrors, helpLevel,
-  stars, onJumpLevel, onJumpSubsection, onJumpPhase, onSetScore, onReset, onClose,
+  stars, totalLevels, activeLevels,
+  onJumpLevel, onJumpSubsection, onJumpPhase, onSetScore, onReset, onClose,
 }: Props) {
   const [scoreInput, setScoreInput] = useState(String(totalScore))
-
-  const subs = LEVELS[levelIndex] ? getSubsections(LEVELS[levelIndex].id) : []
+  const subs = activeLevels[levelIndex] ? getSubsections(activeLevels[levelIndex].id) : []
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-end p-4 pointer-events-none">
@@ -53,7 +56,7 @@ export function DebugPanel({
             <h3 className="text-gray-400 uppercase tracking-wide mb-2">State</h3>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               <span>Phase: <b className="text-lime-400">{phase}</b></span>
-              <span>Level: <b>{levelIndex + 1}/{LEVELS.length}</b></span>
+              <span>Level: <b>{levelIndex + 1}/{totalLevels}</b></span>
               <span>Subsection: <b>{subsectionIndex + 1}/3</b></span>
               <span>Type: <b className="text-cyan-400">{subs[subsectionIndex]?.type ?? '-'}</b></span>
               <span>Score: <b className="text-yellow-400">{totalScore}</b></span>
@@ -89,7 +92,7 @@ export function DebugPanel({
           <section>
             <h3 className="text-gray-400 uppercase tracking-wide mb-2">Level</h3>
             <div className="flex gap-1 flex-wrap">
-              {LEVELS.map((l, i) => (
+              {activeLevels.map((l, i) => (
                 <button
                   key={l.id}
                   onClick={() => onJumpLevel(i)}

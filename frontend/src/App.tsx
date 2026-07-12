@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { VOCABULARY, SCORE, getSubsections } from './config/gameConfig'
+import { VOCABULARY, LEVELS, SCORE, getSubsections } from './config/gameConfig'
 import type { VocabItem, SubsectionType, LevelConfig } from './config/gameConfig'
 import { useGameEngine } from './hooks/useGameEngine'
 import { useSpellEngine } from './hooks/useSpellEngine'
@@ -27,7 +27,7 @@ function resolveSubsections(level: LevelConfig) {
 function App() {
   const { canvasRef, setupCanvas, initGame, startRender, stopRender, handleTap } = useGameEngine()
   const { state: spellState, initSpell, tapCandidate, tapSlot, revealHelp } = useSpellEngine()
-  const { customVocab, customLevels, hasCustom, customCount, importVocab, clearVocab } = useCustomVocab()
+  const { customVocab, customLevels, hasCustom, groups, importVocab, deleteGroup, clearAllVocab } = useCustomVocab()
   const prog = useGameProgress(customLevels)
 
   const [wordQueue, setWordQueue] = useState<VocabItem[]>([])
@@ -46,6 +46,7 @@ function App() {
   subsectionRef.current = prog.subsectionIndex
 
   const activeVocab = customVocab ?? VOCABULARY
+  const activeLevels = customLevels?.length ? customLevels : LEVELS
   const level = prog.currentLevel
   const subsections = level ? resolveSubsections(level) : []
   const currentSub = subsections[prog.subsectionIndex]
@@ -191,10 +192,15 @@ function App() {
     prog.restartGame()
   }, [prog.restartGame])
 
-  const handleClearCustom = useCallback(() => {
-    clearVocab()
+  const handleClearAll = useCallback(() => {
+    clearAllVocab()
     prog.restartGame()
-  }, [clearVocab, prog.restartGame])
+  }, [clearAllVocab, prog.restartGame])
+
+  const handleDeleteGroup = useCallback((id: string) => {
+    deleteGroup(id)
+    prog.restartGame()
+  }, [deleteGroup, prog.restartGame])
 
   const totalStars = prog.levelResults.reduce((sum, r) => sum + r.stars, 0)
 
@@ -204,10 +210,10 @@ function App() {
       {showWordImport && (
         <WordImport
           hasCustomVocab={hasCustom}
-          customCount={customCount}
-          customVocab={customVocab}
+          groups={groups}
           onImport={(vocab, levels) => { importVocab(vocab, levels); setShowWordImport(false) }}
-          onClear={handleClearCustom}
+          onDeleteGroup={handleDeleteGroup}
+          onClearAll={handleClearAll}
           onClose={() => setShowWordImport(false)}
         />
       )}
@@ -299,6 +305,8 @@ function App() {
           helpConsecutiveErrors={prog.help.consecutiveErrors}
           helpLevel={prog.help.helpLevel}
           stars={totalStars}
+          totalLevels={prog.totalLevels}
+          activeLevels={activeLevels}
           onJumpLevel={prog.debug.jumpToLevel}
           onJumpSubsection={prog.debug.jumpToSubsection}
           onJumpPhase={prog.debug.jumpToPhase}

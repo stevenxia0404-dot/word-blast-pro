@@ -3,20 +3,27 @@ import type { VocabItem, LevelConfig } from '../config/gameConfig'
 import { previewParse, finalizeImport, generateCsvTemplate } from '../config/wordParser'
 import type { PreviewItem } from '../config/wordParser'
 
+interface VocabGroup {
+  id: string
+  name: string
+  vocab: VocabItem[]
+  importedAt: number
+}
+
 interface Props {
   hasCustomVocab: boolean
-  customCount: number
-  customVocab: VocabItem[] | null
+  groups: VocabGroup[]
   onImport: (vocab: VocabItem[], levels: LevelConfig[]) => void
-  onClear: () => void
+  onDeleteGroup: (id: string) => void
+  onClearAll: () => void
   onClose: () => void
 }
 
-export function WordImport({ hasCustomVocab, customCount, customVocab, onImport, onClear, onClose }: Props) {
+export function WordImport({ hasCustomVocab, groups, onImport, onDeleteGroup, onClearAll, onClose }: Props) {
   const [text, setText] = useState('')
   const [preview, setPreview] = useState<{ items: PreviewItem[]; errors: string[]; dupCount: number } | null>(null)
   const [filterProblems, setFilterProblems] = useState(false)
-  const [showVocabList, setShowVocabList] = useState(false)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -191,32 +198,58 @@ export function WordImport({ hasCustomVocab, customCount, customVocab, onImport,
               spellCheck={false}
             />
 
-            {/* Current status */}
-            {hasCustomVocab && (
-              <div className="mt-2 text-xs text-blue-600 bg-blue-50 rounded-xl px-3 py-1.5">
-                <div className="flex justify-between items-center">
-                  <button
-                    type="button"
-                    onClick={() => setShowVocabList(!showVocabList)}
-                    className="font-bold hover:underline text-left"
-                  >
-                    已导入 {customCount} 个词条 {showVocabList ? '▲' : '▼'}
-                  </button>
-                  <button type="button" onClick={onClear} className="text-red-500 font-bold hover:underline">
-                    删除词库
-                  </button>
-                </div>
-                {showVocabList && customVocab && (
-                  <div className="mt-2 max-h-40 overflow-auto bg-white rounded-xl p-2 text-gray-700">
-                    {customVocab.map((v, i) => (
-                      <div key={v.id} className="py-0.5 border-b border-gray-100 last:border-0 flex gap-2">
-                        <span className="text-gray-400 w-6 text-right shrink-0">{i + 1}.</span>
-                        <span className="font-medium">{v.en}</span>
-                        <span className="text-gray-500">{v.zh}</span>
+            {/* Existing groups */}
+            {hasCustomVocab && groups.length > 0 && (
+              <div className="mt-2 text-xs">
+                <p className="text-gray-500 mb-1.5 font-bold">已导入的词库组（{groups.length} 组）</p>
+                <div className="space-y-1 max-h-52 overflow-auto">
+                  {groups.map((g) => {
+                    const expanded = expandedGroups.has(g.id)
+                    return (
+                      <div key={g.id} className="bg-gray-50 rounded-xl border border-gray-200">
+                        <div className="flex items-center justify-between px-3 py-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = new Set(expandedGroups)
+                              expanded ? next.delete(g.id) : next.add(g.id)
+                              setExpandedGroups(next)
+                            }}
+                            className="flex items-center gap-1.5 font-medium text-gray-700 hover:text-emerald-600 text-left"
+                          >
+                            <span className="text-emerald-600">📂</span> {g.name}
+                            <span className="text-gray-400">({g.vocab.length} 词)</span>
+                            <span className="text-gray-400 text-[10px]">{expanded ? '▲' : '▼'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteGroup(g.id)}
+                            className="text-red-400 hover:text-red-600 font-bold text-[10px] shrink-0 ml-2"
+                          >
+                            删除
+                          </button>
+                        </div>
+                        {expanded && g.vocab && (
+                          <div className="px-3 pb-2 text-gray-600 space-y-0.5">
+                            {g.vocab.map((v, i) => (
+                              <div key={i} className="flex gap-2 border-t border-gray-100 pt-0.5">
+                                <span className="font-medium">{v.en}</span>
+                                <span className="text-gray-400">{v.zh}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={onClearAll}
+                  className="mt-2 text-red-400 hover:text-red-600 font-bold text-[10px]"
+                >
+                  删除全部词库
+                </button>
               </div>
             )}
 
