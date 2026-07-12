@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
-const BANNER_KEY = 'wordblast_banner_v1'
+const BANNER_KEY = 'wordblast_banner_v2'
 const BANNER_VERSION = 'v2.0'
 
-const BANNER_MSG = `Word Blast 更新
+const BANNER_MSG = `Word Blast v2.0
 
 1. 使用说明页改版
 点击右下角「?」查看。新增了自定义词库、数据存储、添加到主屏幕等实用章节。
@@ -11,8 +11,8 @@ const BANNER_MSG = `Word Blast 更新
 2. 添加到主屏幕
 说明页提供了 iPhone / 安卓 / 电脑的操作步骤。添加后可像普通 App 一样使用，离线也能打开。
 
-3. 自定义词库
-支持粘贴文本或上传文件导入单词，从课本、PDF、网页复制的内容会自动清洗解析。
+3. 自定义词库（支持多组）
+支持粘贴文本或上传模板导入单词。每次导入新增一组词库，不会覆盖旧的，每组可独立管理或删除。
 
 4. 数据存储
 学习进度和词库保存在当前设备上，不上传服务器。更换设备需重新导入词库。
