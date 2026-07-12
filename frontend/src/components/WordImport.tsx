@@ -228,7 +228,7 @@ export function WordImport({ hasCustomVocab, customCount, customVocab, onImport,
                 onClick={() => fileRef.current?.click()}
                 className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-sm py-2.5 rounded-xl transition-colors"
               >
-                上传文件
+                上传模板
               </button>
               <button
                 type="button"
