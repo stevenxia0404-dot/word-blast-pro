@@ -95,7 +95,7 @@ export function useCustomVocab() {
 
   const combined = useMemo(() => buildCombined(groups), [groups])
 
-  const importVocab = useCallback((vocab: VocabItem[], levels: LevelConfig[]) => {
+  const importVocab = useCallback((vocab: VocabItem[], _levels: LevelConfig[]) => {
     const group: VocabGroup = {
       id: String(Date.now()),
       name: `词库 ${groups.length + 1}`,
