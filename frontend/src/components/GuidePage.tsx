@@ -115,6 +115,7 @@ export function GuidePage({ onClose }: Props) {
           <p><strong>🍎 iPhone / iPad：</strong>Safari 浏览器点击底部「分享」按钮（方框↑箭头图标）→ 往下滑找到<strong>「添加到主屏幕」</strong>→ 点右上角「添加」</p>
           <p><strong>🤖 安卓手机 / 平板：</strong>Chrome 浏览器点击右上角 ⋮ 菜单 →<strong>「添加到主屏幕」</strong>或「安装应用」</p>
           <p><strong>💻 电脑：</strong>Chrome / Edge 地址栏右侧点 ⊕ 图标即可安装</p>
+          <p className="text-emerald-600 text-xs mt-2">💡 桌面版和浏览器共享同一份数据，在浏览器导入词库后桌面版自动同步（同一设备）。</p>
         </Section>
       </div>
 
