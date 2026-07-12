@@ -112,7 +112,7 @@ export function WordImport({ hasCustomVocab, customCount, customVocab, onImport,
         <p className="text-xs text-gray-400 text-center mb-3">
           {preview
             ? `${preview.items.length} 条成功 · ${preview.errors.length} 条未识别 · ${preview.dupCount} 条重复`
-            : '每行一个词条：英文 中文（复制自 Excel/PDF/网页均可，自动清洗）'}
+            : '格式很简单：英文+中文，一行一个。从课本、PDF、网页复制过来就能自动识别~'}
         </p>
 
         {preview ? (

@@ -57,9 +57,15 @@ export function GuidePage({ onClose }: Props) {
         </Section>
 
         <Section emoji="📂" title="自定义词库">
-          <p>欢迎页点击「导入自定义词库」，可<strong>粘贴文本</strong>或<strong>上传 txt/csv 文件</strong>。</p>
-          <p>支持下载模板，复制自 Excel/PDF/网页均可自动清洗解析。</p>
-          <p>解析后预览确认，按每 10 词自动生成关卡。已导入词库可随时管理或删除。</p>
+          <p>孩子课本、练习册上的单词都能导进来！</p>
+          <p>欢迎页点击「导入自定义词库」→ 把单词粘贴进去即可。</p>
+          <p>格式很简单：<strong>每行一个，英文在前中文在后</strong>（电脑上操作更方便，支持上传文件）。</p>
+          <p>系统会自动清洗排版，点「解析预览」确认就能用。每 10 个单词自动生成一关。</p>
+        </Section>
+
+        <Section emoji="💾" title="数据存储">
+          <p>学习进度和词库保存在<strong>当前设备的浏览器</strong>中，不上传任何服务器。</p>
+          <p className="text-amber-700">⚠️ 换用其他手机/平板/iPad，或同一设备换浏览器，都需要重新导入词库。</p>
         </Section>
 
         <Section emoji="💬" title="反馈">
