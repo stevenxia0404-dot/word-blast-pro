@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { VocabItem, SubsectionType } from '../config/gameConfig'
+import { getExampleSentence } from '../config/gameConfig'
 
 export interface SlotState {
   index: number
@@ -60,7 +61,7 @@ export function useSpellEngine() {
     helpLevel: number,
   ) => {
     const en = item.en.toLowerCase()
-    let answerTokens: string[]
+    let answerTokens: string[] = []
     let candidates: string[]
     let displaySentence = ''
     let blankWord = ''
@@ -80,14 +81,30 @@ export function useSpellEngine() {
       }
     } else if (mode === 'cloze') {
       const words = en.split(' ')
-      const blankIdx = words.length > 1 ? Math.floor(Math.random() * words.length) : 0
-      blankWord = words[blankIdx]
-      answerTokens = [blankWord]
-      const pre = words.slice(0, blankIdx).join(' ')
-      const post = words.slice(blankIdx + 1).join(' ')
-      displaySentence = `${pre} ___ ${post}`.trim()
-      if (words.length === 1) displaySentence = '___'
       const allWords = allVocab.flatMap(v => v.en.toLowerCase().split(' '))
+      let useSentence = false
+      if (words.length === 1) {
+        // 单词条目：用例句挖空（占位句或正式例句），答案仍是原词
+        const sentence = getExampleSentence(item)
+        const targetRe = new RegExp(`\\b${en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
+        if (targetRe.test(sentence)) {
+          blankWord = words[0]
+          answerTokens = [blankWord]
+          displaySentence = sentence.replace(targetRe, '___')
+          useSentence = true
+        }
+        // 例句里找不到目标词（数据异常）：走下方词条挖空兜底
+      }
+      if (!useSentence) {
+        // 短语/句子：词条自身挖一个词（原有逻辑）
+        const blankIdx = words.length > 1 ? Math.floor(Math.random() * words.length) : 0
+        blankWord = words[blankIdx]
+        answerTokens = [blankWord]
+        const pre = words.slice(0, blankIdx).join(' ')
+        const post = words.slice(blankIdx + 1).join(' ')
+        displaySentence = `${pre} ___ ${post}`.trim()
+        if (words.length === 1) displaySentence = '___'
+      }
       const distractors = randomDistractorWords(3, [blankWord.toLowerCase()], allWords)
       candidates = [blankWord, ...distractors].sort(() => Math.random() - 0.5)
     } else {

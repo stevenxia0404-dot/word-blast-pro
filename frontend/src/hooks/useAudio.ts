@@ -1,3 +1,9 @@
+/* useAudio.ts — 语音中枢
+ * 两级语音链：预生成神经语音（edge-tts · Ana 童声）→ 系统 SpeechSynthesis 兜底
+ * 预生成音频由 tools/gen_audio.py 生成（public/audio/ + manifest.json，key 统一小写）
+ * 兜底场景：自定义导入词（不在 manifest）、音频加载失败、极旧浏览器
+ */
+
 let audioCtx: AudioContext | null = null
 let speakTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -25,6 +31,105 @@ export async function playSoftTone(freq: number, type: OscillatorType = 'sine', 
   } catch { /* AudioContext may not be available */ }
 }
 
+/* ── 神经语音层：单 audio 元素 + manifest 查询 ── */
+
+let audioEl: HTMLAudioElement | null = null
+let neuralManifest: Record<string, { n: string; s: string }> | null = null
+let manifestPromise: Promise<Record<string, { n: string; s: string }> | null> | null = null
+let currentPlayToken = 0
+
+function getAudioEl(): HTMLAudioElement {
+  if (!audioEl) {
+    audioEl = new Audio()
+    audioEl.preload = 'auto'
+  }
+  return audioEl
+}
+
+function loadManifest(): Promise<Record<string, { n: string; s: string }> | null> {
+  if (neuralManifest) return Promise.resolve(neuralManifest)
+  if (!manifestPromise) {
+    manifestPromise = fetch(`${import.meta.env.BASE_URL}audio/manifest.json`)
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d: { ana?: Record<string, { n: string; s: string }> }) => {
+        neuralManifest = d?.ana ?? {}
+        return neuralManifest
+      })
+      .catch(() => {
+        manifestPromise = null // 允许下次重试
+        return null
+      })
+  }
+  return manifestPromise
+}
+
+/** 启动时预取 manifest（首次播报零延迟）。挂载即调，不阻塞渲染 */
+export function preloadNeuralManifest() {
+  void loadManifest()
+}
+
+/** 停掉当前神经语音/回放（切题、兜底前调用，防两路声音重叠） */
+export function stopNeural() {
+  currentPlayToken++
+  const el = getAudioEl()
+  try {
+    el.pause()
+    el.onended = null
+    el.removeAttribute('src')
+    el.load()
+  } catch { /* ignore */ }
+}
+
+/** 尝试播预生成 mp3。命中并成功启动返回 true；未命中/失败返回 false（调用方走系统 TTS 兜底） */
+async function tryPlayNeural(text: string, slow = false, onEnd?: () => void): Promise<boolean> {
+  const man = await loadManifest()
+  if (!man) return false
+  const entry = man[text.toLowerCase()]
+  if (!entry) return false
+  const token = ++currentPlayToken
+  const el = getAudioEl()
+  try { el.pause() } catch { /* ignore */ }
+  el.muted = false
+  el.volume = 1
+  el.src = `${import.meta.env.BASE_URL}audio/${slow ? entry.s : entry.n}`
+  el.onended = () => {
+    el.onended = null
+    if (token === currentPlayToken) onEnd?.()
+  }
+  try {
+    await el.play()
+    return true
+  } catch {
+    // play 被拒（iOS 未解锁）或加载失败：先清 src 再回退，
+    // 防止预生成音频稍后加载成功与系统 TTS 撞在一起（公务英语踩过的坑）
+    if (token === currentPlayToken) stopNeural()
+    return false
+  }
+}
+
+/** 播放录音 blob（跟读对比回放）。与播报共用同一元素，天然互斥不重叠 */
+export function playRecordingUrl(url: string, onEnd?: () => void) {
+  const token = ++currentPlayToken
+  const el = getAudioEl()
+  try { el.pause() } catch { /* ignore */ }
+  el.muted = false
+  el.volume = 1
+  el.src = url
+  el.onended = () => {
+    el.onended = null
+    if (token === currentPlayToken) onEnd?.()
+  }
+  el.play().catch(() => { /* 用户手势限制：静默，用户再点一次即可 */ })
+}
+
+/** 神经语音播报（跟读示范音）：预生成优先，未命中/失败回退系统 TTS */
+export async function speakNeural(text: string, opts: { slow?: boolean; onEnd?: () => void } = {}) {
+  const played = await tryPlayNeural(text, opts.slow, opts.onEnd)
+  if (!played) speakWord(text)
+}
+
+/* ── 系统 SpeechSynthesis（兜底） ── */
+
 let voicesLoaded = false
 
 function getVoices(): SpeechSynthesisVoice[] {
@@ -34,6 +139,7 @@ function getVoices(): SpeechSynthesisVoice[] {
 }
 
 export function preloadVoices() {
+  preloadNeuralManifest()
   if (!('speechSynthesis' in window)) return
   window.speechSynthesis.getVoices()
   window.speechSynthesis.onvoiceschanged = () => {
@@ -61,6 +167,17 @@ async function ensureVoices(): Promise<void> {
 }
 
 export async function speakWord(wordText: string) {
+  const clean = wordText
+    .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+    .trim()
+    .toLowerCase()
+  if (!clean) return
+
+  // 1) 预生成神经语音（Ana 童声，任何设备同一音色）
+  const played = await tryPlayNeural(clean)
+  if (played) return
+
+  // 2) 系统 TTS 兜底（自定义导入词 / 音频加载失败）
   if (!('speechSynthesis' in window)) return
   try {
     if (speakTimer) clearTimeout(speakTimer)
@@ -68,11 +185,6 @@ export async function speakWord(wordText: string) {
       try {
         window.speechSynthesis.cancel()
         await ensureVoices()
-        const clean = wordText
-          .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
-          .trim()
-          .toLowerCase()
-        if (!clean) return
         const utterance = new SpeechSynthesisUtterance(clean)
         utterance.rate = 0.85
         utterance.volume = 1.0
@@ -105,11 +217,27 @@ export async function speakWord(wordText: string) {
   } catch { /* SpeechSynthesis not available */ }
 }
 
+/* iOS 音频解锁：AudioContext + <audio> 元素 + speechSynthesis 三通道一次性解锁
+ * <audio> 用真实静音 WAV、volume=0 播放（iOS 不认 muted=true 的解锁） */
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
+
 export function unlockAudio(): boolean {
   try {
     const ctx = getAudioCtx()
     if (ctx.state === 'suspended') ctx.resume()
     playSoftTone(440, 'sine', 0.15)
+
+    const el = getAudioEl()
+    el.volume = 0
+    el.src = SILENT_WAV
+    el.play()
+      .then(() => {
+        el.pause()
+        el.removeAttribute('src')
+        el.volume = 1
+      })
+      .catch(() => { el.volume = 1 })
+
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel()
       const wu = new SpeechSynthesisUtterance(' ')

@@ -2,15 +2,22 @@ import { preloadVoices, unlockAudio } from '../hooks/useAudio'
 
 interface Props {
   onStart: () => void
+  onStartRepeat?: () => void
   hasCustomVocab?: boolean
   onOpenImport?: () => void
 }
 
-export function WelcomeOverlay({ onStart, hasCustomVocab, onOpenImport }: Props) {
+export function WelcomeOverlay({ onStart, onStartRepeat, hasCustomVocab, onOpenImport }: Props) {
   const handleStart = () => {
     preloadVoices()
     unlockAudio()
     onStart()
+  }
+
+  const handleRepeat = () => {
+    preloadVoices()
+    unlockAudio()
+    onStartRepeat?.()
   }
 
   return (
@@ -31,6 +38,15 @@ export function WelcomeOverlay({ onStart, hasCustomVocab, onOpenImport }: Props)
         >
           PLAY (开启声音)
         </button>
+        {onStartRepeat && (
+          <button
+            type="button"
+            onClick={handleRepeat}
+            className="mt-3 w-full bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold text-base sm:text-lg py-3 sm:py-3.5 rounded-2xl border-2 border-amber-300 shadow-[0_8px_18px_rgba(245,158,11,0.2)] transition-all active:scale-95"
+          >
+            🗣️ 跟读练习（听一听 · 读一读）
+          </button>
+        )}
         {onOpenImport && (
           <>
             <button

@@ -148,6 +148,11 @@ export function useGameProgress(customLevels?: LevelConfig[] | null) {
     setHelp({ consecutiveErrors: 0, helpLevel: 0 })
   }, [])
 
+  /** 模块外加分（跟读/对话等）：只进总分，不动 Combo 与准确率（那是闯关语义） */
+  const addBonusScore = useCallback((points: number) => {
+    setTotalScore(s => s + points)
+  }, [])
+
   const finishSubsection = useCallback(() => {
     setCombo(0)
     setHelp({ consecutiveErrors: 0, helpLevel: 0 })
@@ -260,7 +265,7 @@ export function useGameProgress(customLevels?: LevelConfig[] | null) {
     currentLevel, isLastLevel,
     help,
     subsectionScore, subsectionCorrect, subsectionAttempts,
-    addCorrect, addWrong, addHelpCorrect, useHelp,
+    addCorrect, addWrong, addHelpCorrect, addBonusScore, useHelp,
     finishSubsection, advanceSubsection, completeLevel, nextLevel,
     startGame, restartGame,
     debug,

@@ -18,6 +18,7 @@ import { LevelCompleteOverlay } from './components/LevelCompleteOverlay'
 import { VersionBanner } from './components/VersionBanner'
 import { WordImport } from './components/WordImport'
 import { FeedbackForm } from './components/FeedbackForm'
+import { RepeatModule } from './components/RepeatModule'
 
 /** For built-in levels use original logic; custom levels (>13) default to word mode */
 function resolveSubsections(level: LevelConfig) {
@@ -39,6 +40,9 @@ function App() {
   const [showGuide, setShowGuide] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showWordImport, setShowWordImport] = useState(false)
+  /* 模块分发：blast = 拼写闯关（原有全部逻辑），repeat = 跟读练习（新增）
+   * 只在 welcome 阶段切换，闯关进行中不可切，互不干扰 */
+  const [module, setModule] = useState<'blast' | 'repeat'>('blast')
   const subsectionInitedRef = useRef('')
   const matchInitedRef = useRef('')
   const spellInitedRef = useRef('')
@@ -218,12 +222,22 @@ function App() {
         />
       )}
       <div className="w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto flex flex-col items-center relative min-h-[100dvh] px-3 sm:px-4 md:px-6 pt-2 pb-6">
-      {/* Welcome */}
-      {prog.phase === 'welcome' && (
+      {/* Welcome：闯关入口 + 跟读入口 */}
+      {prog.phase === 'welcome' && module === 'blast' && (
         <WelcomeOverlay
           onStart={handleWelcomeStart}
+          onStartRepeat={() => setModule('repeat')}
           hasCustomVocab={hasCustom}
           onOpenImport={() => setShowWordImport(true)}
+        />
+      )}
+
+      {/* 跟读练习模块（新增，全屏；退出回 welcome） */}
+      {prog.phase === 'welcome' && module === 'repeat' && (
+        <RepeatModule
+          vocab={activeVocab}
+          onAddScore={prog.addBonusScore}
+          onExit={() => setModule('blast')}
         />
       )}
 
