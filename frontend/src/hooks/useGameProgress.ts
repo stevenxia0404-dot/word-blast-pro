@@ -1,59 +1,28 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { LEVELS, getStars, SCORE } from '../config/gameConfig'
 import type { LevelConfig } from '../config/gameConfig'
+import {
+  SAVE_VERSION, migrateSave, readSaveRaw, writeSave, clearSave, shouldPersistSave,
+} from '../config/saveSchema'
+import type { GamePhase, LevelResult, SavedStateV2 } from '../config/saveSchema'
 
-interface LevelResult {
-  stars: number
-  accuracy: number
-  score: number
-}
+/* 类型单一来源在 saveSchema，这里 re-export 保持既有 import 路径可用 */
+export type { GamePhase, LevelResult } from '../config/saveSchema'
 
 interface HelpState {
   consecutiveErrors: number
   helpLevel: number
 }
 
-export type GamePhase = 'welcome' | 'playing' | 'levelComplete' | 'allComplete'
-
-const SAVE_KEY = 'wordblast_save_v1'
-
-interface SavedState {
-  phase: GamePhase
-  levelIndex: number
-  subsectionIndex: number
-  totalScore: number
-  combo: number
-  levelResults: LevelResult[]
-  subsectionScore: number
-  subsectionCorrect: number
-  subsectionAttempts: number
+function loadState(ctx: { totalLevels: number; usingCustom: boolean }): SavedStateV2 | null {
+  const raw = readSaveRaw()
+  if (!raw) return null
+  // 老存档（13 关版）在读入时就地迁移 —— 必须在首屏 state 初始化处做，
+  // 放到 effect 里会先闪一下旧进度
+  return migrateSave(raw, ctx)
 }
 
-function loadState(): SavedState | null {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY)
-    if (!raw) return null
-    const data = JSON.parse(raw)
-    if (!data || typeof data !== 'object') return null
-    return data as SavedState
-  } catch {
-    return null
-  }
-}
-
-function saveState(state: SavedState) {
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state))
-  } catch { /* quota exceeded — silently drop */ }
-}
-
-function clearState() {
-  try {
-    localStorage.removeItem(SAVE_KEY)
-  } catch { /* ignore */ }
-}
-
-function getDefault(loaded: SavedState | null): {
+function getDefault(loaded: SavedStateV2 | null): {
   phase: GamePhase; levelIndex: number; subsectionIndex: number
   totalScore: number; combo: number; levelResults: LevelResult[]
   subsectionScore: number; subsectionCorrect: number; subsectionAttempts: number
@@ -76,7 +45,10 @@ function getDefault(loaded: SavedState | null): {
 
 export function useGameProgress(customLevels?: LevelConfig[] | null) {
   const activeLevels = customLevels?.length ? customLevels : LEVELS
-  const defaultState = getDefault(loadState())
+  const defaultState = getDefault(loadState({
+    totalLevels: activeLevels.length,
+    usingCustom: !!customLevels?.length,
+  }))
   const [phase, setPhase] = useState<GamePhase>(defaultState.phase)
   const [levelIndex, setLevelIndex] = useState(defaultState.levelIndex)
   const [subsectionIndex, setSubsectionIndex] = useState(defaultState.subsectionIndex)
@@ -148,11 +120,6 @@ export function useGameProgress(customLevels?: LevelConfig[] | null) {
     setHelp({ consecutiveErrors: 0, helpLevel: 0 })
   }, [])
 
-  /** 模块外加分（跟读/对话等）：只进总分，不动 Combo 与准确率（那是闯关语义） */
-  const addBonusScore = useCallback((points: number) => {
-    setTotalScore(s => s + points)
-  }, [])
-
   const finishSubsection = useCallback(() => {
     setCombo(0)
     setHelp({ consecutiveErrors: 0, helpLevel: 0 })
@@ -197,7 +164,6 @@ export function useGameProgress(customLevels?: LevelConfig[] | null) {
   }, [])
 
   const startGame = useCallback(() => {
-    clearState()
     resetProgress()
     setPhase('playing')
     setLevelIndex(0)
@@ -206,14 +172,30 @@ export function useGameProgress(customLevels?: LevelConfig[] | null) {
     setLevelResults([])
   }, [resetProgress])
 
+  /** 续玩：不清零、不删档，保留关卡序号与闯关分，只重置小节内状态 */
+  const resumeGame = useCallback(() => {
+    resetProgress()
+    setPhase('playing')
+  }, [resetProgress])
+
+  /** 是否有进度可续（有分数 / 有星 / 关卡往前走过） */
+  const hasProgress = levelResults.length > 0 || levelIndex > 0 || totalScore > 0
+
   const restartGame = useCallback(() => {
     startGame()
   }, [startGame])
 
-  /* ── Auto-save to localStorage ── */
+  /* ── Auto-save to localStorage ──
+   * 关键修复：以前 phase==='welcome' 会 clearState()（删档），跟读模块全程处于
+   * welcome 态 → 口语分永远存不下来。现在改为始终写入，
+   * 只有「完全没进度」才清掉空档（新用户不留垃圾存档）。 */
   useEffect(() => {
-    if (phase === 'welcome') { clearState(); return }
-    saveState({
+    if (!shouldPersistSave({ phase, levelIndex, levelResults, totalScore })) {
+      clearSave()
+      return
+    }
+    writeSave({
+      version: SAVE_VERSION,
       phase,
       levelIndex,
       subsectionIndex,
@@ -247,7 +229,7 @@ export function useGameProgress(customLevels?: LevelConfig[] | null) {
       setTotalScore(s)
     }, []),
     resetAll: useCallback(() => {
-      clearState()
+      clearSave()
       resetProgress()
       setPhase('welcome')
       setLevelIndex(0)
@@ -265,9 +247,10 @@ export function useGameProgress(customLevels?: LevelConfig[] | null) {
     currentLevel, isLastLevel,
     help,
     subsectionScore, subsectionCorrect, subsectionAttempts,
-    addCorrect, addWrong, addHelpCorrect, addBonusScore, useHelp,
+    hasProgress,
+    addCorrect, addWrong, addHelpCorrect, useHelp,
     finishSubsection, advanceSubsection, completeLevel, nextLevel,
-    startGame, restartGame,
+    startGame, restartGame, resumeGame,
     debug,
   }
 }

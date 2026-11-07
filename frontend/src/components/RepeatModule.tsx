@@ -5,19 +5,18 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { VocabItem } from '../config/gameConfig'
-import { SCORE, getExampleSentence } from '../config/gameConfig'
+import { getExampleSentence } from '../config/gameConfig'
 import {
   speakNeural, stopNeural, playRecordingUrl, playSoftTone,
   preloadVoices, unlockAudio,
 } from '../hooks/useAudio'
 import { useRecorder, isRestrictedWebView } from '../hooks/useRecorder'
-import { markSpoken, loadSpoken } from '../hooks/useSpokenRecords'
+import { recordSpoken, loadSpoken } from '../hooks/useSpokenRecords'
 
 const SESSION_SIZE = 10
 
 interface Props {
   vocab: VocabItem[]
-  onAddScore: (points: number) => void
   onExit: () => void
 }
 
@@ -40,7 +39,7 @@ function buildQueue(vocab: VocabItem[], size = SESSION_SIZE): VocabItem[] {
   return picked
 }
 
-export function RepeatModule({ vocab, onAddScore, onExit }: Props) {
+export function RepeatModule({ vocab, onExit }: Props) {
   const [queue, setQueue] = useState<VocabItem[]>(() => buildQueue(vocab))
   const [idx, setIdx] = useState(0)
   const [phase, setPhase] = useState<'card' | 'done'>('card')
@@ -103,9 +102,8 @@ export function RepeatModule({ vocab, onAddScore, onExit }: Props) {
 
   const handleMastered = useCallback(() => {
     if (!item) return
-    const isFirst = markSpoken(item.en)
-    const points = isFirst ? SCORE.repeatFirst : SCORE.repeatReview
-    onAddScore(points)
+    // 口语分独立记账：一次同步写入「首次记录 + 累计分」，不会因进闯关被清零
+    const { isFirst, points } = recordSpoken(item.en)
     setSession(s => ({
       first: s.first + (isFirst ? 1 : 0),
       review: s.review + (isFirst ? 0 : 1),
@@ -122,7 +120,7 @@ export function RepeatModule({ vocab, onAddScore, onExit }: Props) {
         setIdx(i => i + 1)
       }
     }, 700)
-  }, [item, onAddScore, idx, queue.length, cancel])
+  }, [item, idx, queue.length, cancel])
 
   const handleNextSession = useCallback(() => {
     setQueue(buildQueue(vocab))
@@ -155,7 +153,7 @@ export function RepeatModule({ vocab, onAddScore, onExit }: Props) {
           <h2 className="text-2xl font-bold text-emerald-800 bubbly-font mb-2">本组跟读完成！</h2>
           <div className="text-sm text-emerald-700 space-y-1 mb-5">
             <p>首次学会 <strong className="text-lg">{session.first}</strong> 个 · 复习 {session.review} 个</p>
-            <p>跟读得分 <strong className="text-lg text-amber-600">+{session.score}</strong>（已计入总分）</p>
+            <p>跟读得分 <strong className="text-lg text-amber-600">+{session.score}</strong>（独立计入称号）</p>
           </div>
           <div className="flex flex-col gap-2">
             <button

@@ -147,6 +147,28 @@ export function migrateSave(raw: unknown, ctx: MigrateContext): SavedStateV2 | n
   }
 }
 
+/* ── 存档写入策略 ── */
+
+/**
+ * 要不要把当前状态写进存档？
+ *
+ * 旧逻辑是「phase === 'welcome' 就删档」—— 跟读模块全程处于 welcome 态，
+ * 于是口语分永远存不下来（这就是 P0 的根因）。
+ * 现在只有「完全没有任何进度」才不写（不给新用户留空档），
+ * 其余情况一律写入，进度与分数不会再被 phase 冲掉。
+ */
+export function shouldPersistSave(state: {
+  phase: GamePhase
+  levelIndex: number
+  levelResults: unknown[]
+  totalScore: number
+}): boolean {
+  return !(state.phase === 'welcome'
+    && state.levelIndex === 0
+    && state.levelResults.length === 0
+    && state.totalScore === 0)
+}
+
 /* ── 读写（带 try/catch，隐私模式/配额超限都静默降级） ── */
 
 export function readSaveRaw(): unknown {

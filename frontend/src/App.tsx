@@ -237,7 +237,6 @@ function App() {
       {prog.phase === 'welcome' && module === 'repeat' && (
         <RepeatModule
           vocab={activeVocab}
-          onAddScore={prog.addBonusScore}
           onExit={() => setModule('blast')}
         />
       )}
