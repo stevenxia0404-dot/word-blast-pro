@@ -5,3 +5,6 @@ dist/
 .DS_Store
 Thumbs.db
 .wrangler/
+
+# 回归测试构建产物
+tests/*.js
