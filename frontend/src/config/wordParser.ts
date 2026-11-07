@@ -272,4 +272,15 @@ export function generateCsvTemplate(): string {
   )
 }
 
+/** 下载 CSV 模板（首页与导入弹窗共用一份实现） */
+export function downloadCsvTemplate() {
+  const csv = generateCsvTemplate()
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'word_template.csv'
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
 export const CUSTOM_VOCAB_KEY = 'wordblast_custom_v1'

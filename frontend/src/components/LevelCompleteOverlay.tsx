@@ -2,9 +2,10 @@ interface Props {
   stars: number
   accuracy: number
   onNext: () => void
+  onHome: () => void
 }
 
-export function LevelCompleteOverlay({ stars, accuracy, onNext }: Props) {
+export function LevelCompleteOverlay({ stars, accuracy, onNext, onHome }: Props) {
   return (
     <div className="absolute inset-0 bg-white/80 z-40 flex items-center justify-center">
       <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl border-4 border-lime-300 text-center max-w-xs w-full">
@@ -23,6 +24,13 @@ export function LevelCompleteOverlay({ stars, accuracy, onNext }: Props) {
           className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xl py-4 rounded-2xl bubbly-font transition-all active:scale-95"
         >
           下一关
+        </button>
+        <button
+          type="button"
+          onClick={onHome}
+          className="mt-3 text-xs sm:text-sm font-bold text-gray-400 hover:text-emerald-600 underline underline-offset-2 transition-colors"
+        >
+          🏠 回首页
         </button>
       </div>
     </div>

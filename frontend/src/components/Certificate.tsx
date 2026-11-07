@@ -5,6 +5,9 @@ interface Props {
   totalScore: number
   totalStars: number
   onRestart: () => void
+  onHome: () => void
+  /** 口语分（跟读）：与闯关分并列展示，总分 = 两者之和 */
+  spokenScore?: number
 }
 
 function CounterRoll({ target, duration = 1200 }: { target: number; duration?: number }) {
@@ -27,7 +30,7 @@ function CounterRoll({ target, duration = 1200 }: { target: number; duration?: n
   return <span className="bubbly-font text-2xl sm:text-3xl text-amber-500">{val}</span>
 }
 
-export function Certificate({ totalScore, totalStars, onRestart }: Props) {
+export function Certificate({ totalScore, totalStars, onRestart, onHome, spokenScore = 0 }: Props) {
   const title = getTitle(totalScore)
   const [phase, setPhase] = useState(0)
 
@@ -88,10 +91,16 @@ export function Certificate({ totalScore, totalStars, onRestart }: Props) {
           <h2 className="text-xl sm:text-2xl bubbly-font text-emerald-600 mt-1">{title.name}</h2>
         </div>
 
-        {/* 分数 */}
+        {/* 分数：闯关分 + 口语分（称号按总和判定，展示口径保持一致） */}
         <div className="bg-amber-50 rounded-2xl p-3 sm:p-4 mb-3 sm:mb-4 border border-amber-200">
           <span className="text-xs sm:text-sm text-amber-600 font-bold block mb-1">总积分</span>
-          {phase >= 3 ? <CounterRoll target={totalScore} /> : <span className="bubbly-font text-2xl sm:text-3xl text-amber-500">0</span>}
+          {phase >= 3
+            ? <CounterRoll target={totalScore + spokenScore} />
+            : <span className="bubbly-font text-2xl sm:text-3xl text-amber-500">0</span>}
+          <div className="text-[11px] sm:text-xs text-amber-500/90 mt-1.5 flex justify-center gap-3 flex-wrap">
+            <span>闯关 {totalScore}</span>
+            <span>口语 {spokenScore}</span>
+          </div>
         </div>
 
         <p className="text-gray-400 text-[10px] sm:text-xs mb-4 sm:mb-6">{today}</p>
@@ -111,7 +120,7 @@ export function Certificate({ totalScore, totalStars, onRestart }: Props) {
           <button
             type="button"
             onClick={() => {
-              const text = `我在 Word Blast 获得了 ${totalScore} 分和 ${totalStars} 颗星！🎉`
+              const text = `我在 Word Blast 获得了 ${totalScore + spokenScore} 分和 ${totalStars} 颗星！🎉`
               if (navigator.share) {
                 navigator.share({ title: 'Word Blast Pro', text })
               } else {
@@ -123,6 +132,13 @@ export function Certificate({ totalScore, totalStars, onRestart }: Props) {
             炫耀一下
           </button>
         </div>
+        <button
+          type="button"
+          onClick={onHome}
+          className="mt-4 text-xs sm:text-sm font-bold text-gray-400 hover:text-emerald-600 underline underline-offset-2 transition-colors"
+        >
+          🏠 回首页
+        </button>
       </div>
     </div>
   )

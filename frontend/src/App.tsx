@@ -1,12 +1,14 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { VOCABULARY, LEVELS, SCORE, resolveSubsections } from './config/gameConfig'
+import { VOCABULARY, LEVELS, SCORE, resolveSubsections, getTitle } from './config/gameConfig'
 import type { VocabItem, SubsectionType } from './config/gameConfig'
 import { useGameEngine } from './hooks/useGameEngine'
 import { useSpellEngine } from './hooks/useSpellEngine'
 import { useGameProgress } from './hooks/useGameProgress'
 import { useCustomVocab } from './hooks/useCustomVocab'
+import { spokenTotal } from './hooks/useSpokenRecords'
+import { downloadCsvTemplate } from './config/wordParser'
 import { preloadVoices, unlockAudio, speakWord, stopNeural } from './hooks/useAudio'
-import { WelcomeOverlay } from './components/WelcomeOverlay'
+import { HomeScreen } from './components/HomeScreen'
 import { ScoreBoard } from './components/ScoreBoard'
 import { GameCanvas } from './components/GameCanvas'
 import { SpellCanvas } from './components/SpellCanvas'
@@ -252,11 +254,17 @@ function App() {
       <div className="w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto flex flex-col items-center relative min-h-[100dvh] px-3 sm:px-4 md:px-6 pt-2 pb-6">
       {/* 模块首页：恒为第一屏，与 phase 解耦 */}
       {module === 'home' && (
-        <WelcomeOverlay
-          onStart={startBlast}
-          onStartRepeat={() => setModule('repeat')}
+        <HomeScreen
+          blastAction={prog.phase === 'allComplete' ? 'certificate' : prog.hasProgress ? 'resume' : 'start'}
+          blastLevel={prog.levelIndex + 1}
+          blastScore={prog.totalScore}
+          spokenScore={spokenTotal()}
+          title={getTitle(prog.totalScore, spokenTotal())}
           hasCustomVocab={hasCustom}
+          onStartBlast={startBlast}
+          onStartRepeat={() => setModule('repeat')}
           onOpenImport={() => setShowWordImport(true)}
+          onDownloadTemplate={downloadCsvTemplate}
         />
       )}
 
@@ -283,6 +291,7 @@ function App() {
             helpLevel={prog.help.helpLevel}
             onUseHelp={prog.useHelp}
             onDebugActivate={() => setDebugOpen(v => !v)}
+            onHome={goHome}
           />
 
           {subsectionType === 'match' ? (
@@ -318,6 +327,7 @@ function App() {
               stars={prog.levelResults[prog.levelIndex]?.stars ?? 1}
               accuracy={prog.levelResults[prog.levelIndex]?.accuracy ?? prog.accuracy}
               onNext={handleNextLevel}
+              onHome={goHome}
             />
           )}
         </>
@@ -328,7 +338,9 @@ function App() {
         <Certificate
           totalScore={prog.totalScore}
           totalStars={totalStars}
+          spokenScore={spokenTotal()}
           onRestart={handleRestart}
+          onHome={goHome}
         />
       )}
 
@@ -348,6 +360,7 @@ function App() {
           stars={totalStars}
           totalLevels={prog.totalLevels}
           activeLevels={activeLevels}
+          subsections={subsections}
           onJumpLevel={prog.debug.jumpToLevel}
           onJumpSubsection={prog.debug.jumpToSubsection}
           onJumpPhase={prog.debug.jumpToPhase}

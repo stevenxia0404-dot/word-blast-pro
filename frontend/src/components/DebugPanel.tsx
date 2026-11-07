@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { TITLES, getSubsections } from '../config/gameConfig'
+import { TITLES } from '../config/gameConfig'
 import type { GamePhase } from '../hooks/useGameProgress'
-import type { LevelConfig } from '../config/gameConfig'
+import type { LevelConfig, SubsectionDef } from '../config/gameConfig'
 
 interface Props {
   phase: GamePhase
@@ -17,6 +17,8 @@ interface Props {
   stars: number
   totalLevels: number
   activeLevels: LevelConfig[]
+  /** 当前关卡的小节配置（与 App 同源，避免自定义词库关卡显示错位） */
+  subsections: SubsectionDef[]
   onJumpLevel: (idx: number) => void
   onJumpSubsection: (idx: number) => void
   onJumpPhase: (p: GamePhase) => void
@@ -35,11 +37,11 @@ const PHASES: { key: GamePhase; label: string }[] = [
 export function DebugPanel({
   phase, levelIndex, subsectionIndex, totalScore, combo, accuracy,
   subsectionCorrect, subsectionAttempts, helpConsecutiveErrors, helpLevel,
-  stars, totalLevels, activeLevels,
+  stars, totalLevels, activeLevels, subsections,
   onJumpLevel, onJumpSubsection, onJumpPhase, onSetScore, onReset, onClose,
 }: Props) {
   const [scoreInput, setScoreInput] = useState(String(totalScore))
-  const subs = activeLevels[levelIndex] ? getSubsections(activeLevels[levelIndex].id) : []
+  const subs = subsections
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-end p-4 pointer-events-none">
@@ -167,6 +169,62 @@ export function DebugPanel({
               Reset All (Welcome)
             </button>
           </section>
+
+          {/* dev-only：塞一份 13 关老存档，用来验证 v2 迁移逻辑 */}
+          {import.meta.env.DEV && (
+            <section>
+              <h3 className="text-gray-400 uppercase tracking-wide mb-2">Dev tools</h3>
+              <button
+                onClick={() => {
+                  try {
+                    localStorage.setItem('wordblast_save_v1', JSON.stringify({
+                      phase: 'playing',
+                      levelIndex: 12,
+                      subsectionIndex: 0,
+                      totalScore: 4200,
+                      combo: 0,
+                      levelResults: Array.from({ length: 13 }, (_, i) => ({
+                        stars: (i % 3) + 1, accuracy: 60 + i, score: 100 * (i + 1),
+                      })),
+                      subsectionScore: 0, subsectionCorrect: 0, subsectionAttempts: 0,
+                    }))
+                    location.reload()
+                  } catch { /* ignore */ }
+                }}
+                className="w-full py-2 bg-amber-700 hover:bg-amber-600 text-white font-bold rounded-xl text-sm"
+              >
+                写入 13 关老存档（验证迁移）
+              </button>
+            </section>
+          )}
+
+          {/* dev-only：塞一份 13 关老存档，用来验证 v2 迁移逻辑 */}
+          {import.meta.env.DEV && (
+            <section>
+              <h3 className="text-gray-400 uppercase tracking-wide mb-2">Dev tools</h3>
+              <button
+                onClick={() => {
+                  try {
+                    localStorage.setItem('wordblast_save_v1', JSON.stringify({
+                      phase: 'playing',
+                      levelIndex: 12,
+                      subsectionIndex: 0,
+                      totalScore: 4200,
+                      combo: 0,
+                      levelResults: Array.from({ length: 13 }, (_, i) => ({
+                        stars: (i % 3) + 1, accuracy: 60 + i, score: 100 * (i + 1),
+                      })),
+                      subsectionScore: 0, subsectionCorrect: 0, subsectionAttempts: 0,
+                    }))
+                    location.reload()
+                  } catch { /* ignore */ }
+                }}
+                className="w-full py-2 bg-amber-700 hover:bg-amber-600 text-white font-bold rounded-xl text-sm"
+              >
+                写入 13 关老存档（验证迁移）
+              </button>
+            </section>
+          )}
         </div>
       </div>
     </div>

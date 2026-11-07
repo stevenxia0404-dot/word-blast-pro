@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import type { VocabItem, LevelConfig } from '../config/gameConfig'
-import { previewParse, finalizeImport, generateCsvTemplate } from '../config/wordParser'
+import { previewParse, finalizeImport, downloadCsvTemplate } from '../config/wordParser'
 import type { PreviewItem, PreviewResult } from '../config/wordParser'
 
 interface VocabGroup {
@@ -71,16 +71,6 @@ export function WordImport({ hasCustomVocab, groups, onImport, onDeleteGroup, on
     reader.readAsText(file)
   }
 
-  const handleDownloadTemplate = () => {
-    const csv = generateCsvTemplate()
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'word_template.csv'
-    a.click()
-    URL.revokeObjectURL(a.href)
-  }
-
   const scrollToLine = (item: PreviewItem) => {
     setPreview(null)
     setTimeout(() => {
@@ -113,9 +103,18 @@ export function WordImport({ hasCustomVocab, groups, onImport, onDeleteGroup, on
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-white rounded-[2rem] p-6 max-w-3xl w-full mx-4 shadow-2xl border-4 border-lime-200 max-h-[92vh] flex flex-col">
-        <h2 className="text-xl font-bold text-gray-700 text-center mb-1 bubbly-font">
-          {preview ? '预览解析结果' : '导入自定义词库'}
-        </h2>
+        <div className="w-full flex items-start justify-between gap-2 mb-1">
+          <h2 className="text-xl font-bold text-gray-700 bubbly-font flex-1 text-center">
+            {preview ? '预览解析结果' : '导入自定义词库'}
+          </h2>
+          <button
+            type="button"
+            onClick={downloadCsvTemplate}
+            className="shrink-0 bg-lime-50 hover:bg-lime-100 text-lime-700 font-bold text-[11px] sm:text-xs px-2.5 py-1.5 rounded-xl border-2 border-lime-200 transition-all active:scale-95"
+          >
+            ⬇️ 下载模板
+          </button>
+        </div>
         <p className="text-xs text-gray-400 text-center mb-3">
           {preview
             ? `${preview.items.length} 条成功 · ${preview.errors.length} 条未识别 · ${preview.dupCount} 条重复（单词 ${preview.typeCounts.word} · 短语 ${preview.typeCounts.phrase} · 句子 ${preview.typeCounts.sentence}）`
@@ -268,13 +267,6 @@ export function WordImport({ hasCustomVocab, groups, onImport, onDeleteGroup, on
                 className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-sm py-2.5 rounded-xl transition-colors"
               >
                 上传模板
-              </button>
-              <button
-                type="button"
-                onClick={handleDownloadTemplate}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-sm py-2.5 rounded-xl transition-colors"
-              >
-                下载模板
               </button>
             </div>
             <div className="flex gap-2 mt-2">

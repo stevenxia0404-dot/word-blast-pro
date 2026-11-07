@@ -12,6 +12,7 @@ interface Props {
   helpLevel: number
   onUseHelp: () => void
   onDebugActivate: () => void
+  onHome: () => void
 }
 
 const HELP_LABELS = ['', '💡 首字母 -300', '💡 揭露一半 -500', '💡 跳过 -800']
@@ -19,7 +20,7 @@ const HELP_LABELS = ['', '💡 首字母 -300', '💡 揭露一半 -500', '💡 
 export const ScoreBoard = memo(function ScoreBoard({
   score, combo, levelName, levelIndex, totalLevels,
   subsectionIndex, subsectionLabel, showHelp, helpLevel, onUseHelp,
-  onDebugActivate,
+  onDebugActivate, onHome,
 }: Props) {
   const clickCountRef = useRef(0)
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -41,6 +42,14 @@ export const ScoreBoard = memo(function ScoreBoard({
     <div className="w-full bg-white rounded-3xl p-2.5 sm:p-3 md:p-4 mb-2 sm:mb-3 shadow-[0_16px_32px_rgba(0,0,0,0.06)] border-4 border-lime-200">
       <div className="flex items-center justify-between mb-1.5 sm:mb-2 flex-wrap gap-1">
         <div className="flex items-center gap-1.5 sm:gap-2">
+          <button
+            type="button"
+            onClick={onHome}
+            aria-label="返回首页"
+            className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-full text-sm sm:text-base flex items-center justify-center shrink-0 transition-all active:scale-90"
+          >
+            🏠
+          </button>
           <button
             type="button"
             onClick={handleDebugTap}
