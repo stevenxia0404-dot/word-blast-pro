@@ -26,7 +26,11 @@ import Inspector from './components/Inspector'
 function App() {
   const { canvasRef, setupCanvas, initGame, startRender, stopRender, handleTap } = useGameEngine()
   const { state: spellState, initSpell, tapCandidate, tapSlot, revealHelp } = useSpellEngine()
-  const { customVocab, customLevels, hasCustom, groups, importVocab, deleteGroup, clearAllVocab } = useCustomVocab()
+  const {
+    customVocab, customLevels, hasCustom, groups,
+    importVocab, deleteGroup, clearAllVocab,
+    renameGroup, updateGroupVocab, addWordToGroup, removeWordFromGroup,
+  } = useCustomVocab()
   const prog = useGameProgress(customLevels)
 
   const [wordQueue, setWordQueue] = useState<VocabItem[]>([])
@@ -243,11 +247,14 @@ function App() {
       <VersionBanner onConfirm={() => {}} />
       {showWordImport && (
         <WordImport
-          hasCustomVocab={hasCustom}
           groups={groups}
-          onImport={(vocab, levels) => { importVocab(vocab, levels); setShowWordImport(false) }}
+          onImport={(vocab, levels, meta) => { importVocab(vocab, levels, meta) }}
           onDeleteGroup={handleDeleteGroup}
           onClearAll={handleClearAll}
+          onRenameGroup={renameGroup}
+          onUpdateGroup={updateGroupVocab}
+          onAddWord={addWordToGroup}
+          onRemoveWord={removeWordFromGroup}
           onClose={() => setShowWordImport(false)}
         />
       )}

@@ -8,3 +8,4 @@ Thumbs.db
 
 # 回归测试构建产物
 tests/*.js
+tests/*.cjs
