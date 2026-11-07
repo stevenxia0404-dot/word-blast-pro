@@ -19,6 +19,7 @@ import { VersionBanner } from './components/VersionBanner'
 import { WordImport } from './components/WordImport'
 import { FeedbackForm } from './components/FeedbackForm'
 import { RepeatModule } from './components/RepeatModule'
+import Inspector from './components/Inspector'
 
 /** For built-in levels use original logic; custom levels (>13) default to word mode */
 function resolveSubsections(level: LevelConfig) {
@@ -340,6 +341,9 @@ function App() {
         <FeedbackForm onClose={() => setShowFeedback(false)} />
       )}
     </div>
+
+    {/* dev-frame 标注器 —— 仅 dev，生产构建整棵 tree-shake */}
+    {import.meta.env.DEV && <Inspector />}
 
     {/* Guide + Feedback buttons — bottom right */}
     {(prog.phase === 'welcome' || prog.phase === 'playing') && !showGuide && !showFeedback && (

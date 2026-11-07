@@ -4,6 +4,16 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // dev-frame 标注器收件通道：同源 /api/dev-marks → 本机收件服务（仅 dev 生效，生产构建不受影响）
+  server: {
+    proxy: {
+      '/api/dev-marks': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true,
+        rewrite: p => p.replace(/^\/api\/dev-marks/, '/marks'),
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),

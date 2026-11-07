@@ -1,6 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap');
 @import "tailwindcss";
 
+/* 安全区走可覆盖变量：真机取 env()，dev-frame 画布注入 --sat/--sab 模拟机型 */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }
@@ -19,10 +27,10 @@ body {
   padding: 0;
   min-height: -webkit-fill-available;
   min-height: 100dvh;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  padding-top: var(--sat);
+  padding-bottom: var(--sab);
+  padding-left: var(--sal);
+  padding-right: var(--sar);
 }
 
 .bubbly-font {
@@ -32,8 +40,8 @@ body {
 /* 响应式容器 */
 .game-container {
   width: 100%;
-  padding-left: max(12px, env(safe-area-inset-left));
-  padding-right: max(12px, env(safe-area-inset-right));
+  padding-left: max(12px, var(--sal));
+  padding-right: max(12px, var(--sar));
 }
 
 /* 触控友好的最小点击区域 */
