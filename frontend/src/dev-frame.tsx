@@ -1,3 +1,4 @@
+import './index.css';
 
 /**
  * 开发期设备画布 —— 只在 next dev 里有意义
