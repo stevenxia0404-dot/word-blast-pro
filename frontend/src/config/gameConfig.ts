@@ -222,6 +222,37 @@ export function getSubsections(levelId: number): SubsectionDef[] {
   ]
 }
 
+/** 按关卡「内容」决定玩法家族，而不是按关卡 id。
+ *  内建 12 关的行为与 getSubsections 完全一致；
+ *  自定义词库关卡（id 可能 >13）按实际词条类型判定，修掉玩法错位。 */
+export function resolveSubsections(level: LevelConfig | undefined, vocab: VocabItem[]): SubsectionDef[] {
+  if (!level) return []
+  const items = level.wordIds
+    .map(id => vocab.find(v => v.id === id))
+    .filter((v): v is VocabItem => Boolean(v))
+  if (items.length === 0) return []
+  const types = items.map(v => v.type ?? classifyVocab(v.en))
+  if (types.every(t => t === 'word')) {
+    return [
+      { type: 'match', label: '配对消消' },
+      { type: 'spell', label: '字母拼写' },
+      { type: 'cloze', label: '例句填空' },
+    ]
+  }
+  if (types.includes('sentence')) {
+    return [
+      { type: 'cloze', label: '句子填空' },
+      { type: 'wordOrder', label: '连词成句' },
+      { type: 'cloze', label: '混合填空' },
+    ]
+  }
+  return [
+    { type: 'cloze', label: '短语填空' },
+    { type: 'wordSelect', label: '选词拼短语' },
+    { type: 'cloze', label: '短语填空 · 换个空' },
+  ]
+}
+
 /* ── 例句：正式例句由内容资料提供，占位句供开发期测试 ── */
 
 const SENTENCE_TEMPLATES = [
@@ -280,10 +311,13 @@ export const TITLES: TitleDef[] = [
   { name: '单词大王', emoji: '👑', minScore: 5000 },
 ]
 
-export function getTitle(score: number): TitleDef {
+/** 称号判定：闯关分 + 口语分（跟读/对话）总和。
+ *  门槛表不变，只把判定值改成两个来源相加 —— 老用户不会掉称号，口语练习也能挣称号。 */
+export function getTitle(blastScore: number, spokenScore = 0): TitleDef {
+  const total = blastScore + spokenScore
   let t = TITLES[0]
   for (const title of TITLES) {
-    if (score >= title.minScore) t = title
+    if (total >= title.minScore) t = title
   }
   return t
 }
