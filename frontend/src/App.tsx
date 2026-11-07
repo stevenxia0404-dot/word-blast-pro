@@ -1,11 +1,11 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { VOCABULARY, LEVELS, SCORE, getSubsections } from './config/gameConfig'
-import type { VocabItem, SubsectionType, LevelConfig } from './config/gameConfig'
+import { VOCABULARY, LEVELS, SCORE, resolveSubsections } from './config/gameConfig'
+import type { VocabItem, SubsectionType } from './config/gameConfig'
 import { useGameEngine } from './hooks/useGameEngine'
 import { useSpellEngine } from './hooks/useSpellEngine'
 import { useGameProgress } from './hooks/useGameProgress'
 import { useCustomVocab } from './hooks/useCustomVocab'
-import { preloadVoices, unlockAudio, speakWord } from './hooks/useAudio'
+import { preloadVoices, unlockAudio, speakWord, stopNeural } from './hooks/useAudio'
 import { WelcomeOverlay } from './components/WelcomeOverlay'
 import { ScoreBoard } from './components/ScoreBoard'
 import { GameCanvas } from './components/GameCanvas'
@@ -20,11 +20,6 @@ import { WordImport } from './components/WordImport'
 import { FeedbackForm } from './components/FeedbackForm'
 import { RepeatModule } from './components/RepeatModule'
 import Inspector from './components/Inspector'
-
-/** For built-in levels use original logic; custom levels (>13) default to word mode */
-function resolveSubsections(level: LevelConfig) {
-  return getSubsections(level.id <= 13 ? level.id : 1)
-}
 
 function App() {
   const { canvasRef, setupCanvas, initGame, startRender, stopRender, handleTap } = useGameEngine()
@@ -41,9 +36,9 @@ function App() {
   const [showGuide, setShowGuide] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showWordImport, setShowWordImport] = useState(false)
-  /* 模块分发：blast = 拼写闯关（原有全部逻辑），repeat = 跟读练习（新增）
-   * 只在 welcome 阶段切换，闯关进行中不可切，互不干扰 */
-  const [module, setModule] = useState<'blast' | 'repeat'>('blast')
+  /* 模块分发：home = 模块首页，blast = 拼写闯关，repeat = 跟读练习
+   * 与 prog.phase 解耦：首页恒为第一屏，phase 只描述闯关内部状态 */
+  const [module, setModule] = useState<'home' | 'blast' | 'repeat'>('home')
   const subsectionInitedRef = useRef('')
   const matchInitedRef = useRef('')
   const spellInitedRef = useRef('')
@@ -53,19 +48,36 @@ function App() {
   const activeVocab = customVocab ?? VOCABULARY
   const activeLevels = customLevels?.length ? customLevels : LEVELS
   const level = prog.currentLevel
-  const subsections = level ? resolveSubsections(level) : []
+  const subsections = resolveSubsections(level, activeVocab)
   const currentSub = subsections[prog.subsectionIndex]
   const levelVocab = level ? level.wordIds.map(id => activeVocab.find(v => v.id === id)!).filter(Boolean) : []
 
-  /* ── Welcome → start ── */
-  const handleWelcomeStart = useCallback(() => {
+  /* ── 进入闯关：三条路径（看证书 / 继续 / 新开一局） ── */
+  const startBlast = useCallback(() => {
     preloadVoices()
     unlockAudio()
+    // 重置初始化标记：画布/题目要按当前状态重新初始化，否则回来是空白
     subsectionInitedRef.current = ''
     matchInitedRef.current = ''
     spellInitedRef.current = ''
-    prog.startGame()
-  }, [prog.startGame])
+    if (prog.phase === 'allComplete') {
+      setModule('blast')       // 已通关：直接看证书
+      return
+    }
+    if (prog.hasProgress) {
+      prog.resumeGame()        // 有进度：续玩，不清零
+    } else {
+      prog.startGame()         // 全新：开一局
+    }
+    setModule('blast')
+  }, [prog.phase, prog.hasProgress, prog.resumeGame, prog.startGame])
+
+  /* ── 回首页：只切 module，不动 phase、不碰任何计分 ── */
+  const goHome = useCallback(() => {
+    stopNeural()
+    setModule('home')
+    setDebugOpen(false)
+  }, [])
 
   /* ── Match callbacks (stable via refs) ── */
   const onMatchCorrectRef = useRef<() => void>(() => {})
@@ -86,8 +98,20 @@ function App() {
     }, 800)
   }
 
+  /* ── module 变化 → 重置初始化标记 ──
+   * 不重置的后果：从首页进闯关时 ref 仍是旧 key，
+   * 初始化 effect 会被跳过 → 消消乐画布永久空白（本次最高回归风险点） */
+  useEffect(() => {
+    if (module === 'blast') return
+    subsectionInitedRef.current = ''
+    matchInitedRef.current = ''
+    spellInitedRef.current = ''
+  }, [module])
+
   /* ── Initialize subsection → set type ── */
   useEffect(() => {
+    if (module !== 'blast') return
+    if (module !== 'blast') return
     if (prog.phase !== 'playing' || !level) return
     const sub = subsections[prog.subsectionIndex]
     if (!sub) return
@@ -98,10 +122,11 @@ function App() {
     setSubsectionType(sub.type)
     setShowHelpBtn(false)
     setSpellResult(null)
-  }, [prog.phase, prog.levelIndex, prog.subsectionIndex])
+  }, [module, prog.phase, prog.levelIndex, prog.subsectionIndex])
 
   /* ── Init match canvas ── (after subsectionType committed, canvas is mounted) */
   useEffect(() => {
+    if (module !== 'blast') return
     if (prog.phase !== 'playing' || !level) return
     if (subsectionType !== 'match') return
     const key = `${prog.levelIndex}-${prog.subsectionIndex}`
@@ -119,10 +144,11 @@ function App() {
       startRender()
     }, 50)
     return () => clearTimeout(timer)
-  }, [subsectionType, prog.phase, prog.levelIndex, prog.subsectionIndex])
+  }, [module, subsectionType, prog.phase, prog.levelIndex, prog.subsectionIndex])
 
   /* ── Init spell/cloze queue ── (after DOM commit) */
   useEffect(() => {
+    if (module !== 'blast') return
     if (prog.phase !== 'playing' || !level) return
     if (subsectionType === 'match') return
     const key = `s-${prog.levelIndex}-${prog.subsectionIndex}`
@@ -133,7 +159,7 @@ function App() {
     const queue = [...levelVocab].sort(() => Math.random() - 0.5)
     setWordQueue(queue)
     setCurrentWordIdx(0)
-  }, [subsectionType, prog.phase, prog.levelIndex, prog.subsectionIndex])
+  }, [module, subsectionType, prog.phase, prog.levelIndex, prog.subsectionIndex])
 
   /* ── Init spell/cloze for current word ── */
   useEffect(() => {
@@ -195,6 +221,7 @@ function App() {
   /* ── Certificate restart ── */
   const handleRestart = useCallback(() => {
     prog.restartGame()
+    setModule('blast')
   }, [prog.restartGame])
 
   const handleClearAll = useCallback(() => {
@@ -223,26 +250,26 @@ function App() {
         />
       )}
       <div className="w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto flex flex-col items-center relative min-h-[100dvh] px-3 sm:px-4 md:px-6 pt-2 pb-6">
-      {/* Welcome：闯关入口 + 跟读入口 */}
-      {prog.phase === 'welcome' && module === 'blast' && (
+      {/* 模块首页：恒为第一屏，与 phase 解耦 */}
+      {module === 'home' && (
         <WelcomeOverlay
-          onStart={handleWelcomeStart}
+          onStart={startBlast}
           onStartRepeat={() => setModule('repeat')}
           hasCustomVocab={hasCustom}
           onOpenImport={() => setShowWordImport(true)}
         />
       )}
 
-      {/* 跟读练习模块（新增，全屏；退出回 welcome） */}
-      {prog.phase === 'welcome' && module === 'repeat' && (
+      {/* 跟读练习模块（全屏；退出回首页） */}
+      {module === 'repeat' && (
         <RepeatModule
           vocab={activeVocab}
-          onExit={() => setModule('blast')}
+          onExit={goHome}
         />
       )}
 
       {/* Playing + LevelComplete */}
-      {(prog.phase === 'playing' || prog.phase === 'levelComplete') && (
+      {module === 'blast' && (prog.phase === 'playing' || prog.phase === 'levelComplete') && (
         <>
           <ScoreBoard
             score={prog.totalScore}
@@ -297,7 +324,7 @@ function App() {
       )}
 
       {/* Certificate */}
-      {prog.phase === 'allComplete' && (
+      {module === 'blast' && prog.phase === 'allComplete' && (
         <Certificate
           totalScore={prog.totalScore}
           totalStars={totalStars}
@@ -345,7 +372,7 @@ function App() {
     {import.meta.env.DEV && <Inspector />}
 
     {/* Guide + Feedback buttons — bottom right */}
-    {(prog.phase === 'welcome' || prog.phase === 'playing') && !showGuide && !showFeedback && (
+    {(module === 'home' || module === 'blast') && !showGuide && !showFeedback && (
       <div className="fixed bottom-6 right-4 z-[60] flex items-center gap-2">
         <button
           type="button"
