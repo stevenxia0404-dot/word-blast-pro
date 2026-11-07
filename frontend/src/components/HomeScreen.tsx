@@ -18,6 +18,9 @@ interface Props {
   onStartRepeat: () => void
   onOpenImport: () => void
   onDownloadTemplate: () => void
+  onOpenSync: () => void
+  onOpenParent: () => void
+  onOpenReport: () => void
 }
 
 const BLAST_SUBTITLE = {
@@ -28,7 +31,7 @@ const BLAST_SUBTITLE = {
 
 export function HomeScreen({
   blastAction, blastLevel, blastScore, spokenScore, title,
-  hasCustomVocab, onStartBlast, onStartRepeat, onOpenImport, onDownloadTemplate,
+  hasCustomVocab, onStartBlast, onStartRepeat, onOpenImport, onDownloadTemplate, onOpenSync, onOpenParent, onOpenReport,
 }: Props) {
   return (
     <div className="absolute inset-0 z-50 overflow-y-auto overscroll-contain bg-gradient-to-br from-lime-400 to-emerald-500">
@@ -105,7 +108,34 @@ export function HomeScreen({
               ⬇️ 下载模板
             </button>
           </div>
-          <p className="text-[11px] text-lime-600 mb-1">（词库保存在当前设备上）</p>
+          {/* ── 功能区：同步 / 家长区 / 反馈 ── */}
+          <div className="w-full grid grid-cols-3 gap-2 mb-2">
+            <button
+              type="button"
+              onClick={onOpenSync}
+              className="flex flex-col items-center justify-center gap-0.5 bg-white hover:bg-sky-50 text-sky-700 font-bold text-[11px] py-2 rounded-2xl border-2 border-sky-100 transition-all active:scale-95"
+            >
+              <span className="text-base leading-none">☁️</span>
+              <span>跨设备同步</span>
+            </button>
+            <button
+              type="button"
+              onClick={onOpenParent}
+              className="flex flex-col items-center justify-center gap-0.5 bg-white hover:bg-violet-50 text-violet-700 font-bold text-[11px] py-2 rounded-2xl border-2 border-violet-100 transition-all active:scale-95"
+            >
+              <span className="text-base leading-none">👨‍👩‍👧</span>
+              <span>家长区</span>
+            </button>
+            <button
+              type="button"
+              onClick={onOpenReport}
+              className="flex flex-col items-center justify-center gap-0.5 bg-white hover:bg-amber-50 text-amber-700 font-bold text-[11px] py-2 rounded-2xl border-2 border-amber-100 transition-all active:scale-95"
+            >
+              <span className="text-base leading-none">📊</span>
+              <span>学习报告</span>
+            </button>
+          </div>
+          <p className="text-[11px] text-lime-600 mb-1">（词库保存在当前设备上 · 跨设备同步即将上线）</p>
 
           <p className="text-[11px] text-emerald-400 mt-1">v3.0</p>
         </div>

@@ -59,11 +59,36 @@ export function GuidePage({ onClose }: Props) {
 
         <Section emoji="📂" title="导入课本单词与模板">
           <p>孩子课本、练习册上的单词都能导进来！</p>
-          <p>首页底部「📂 导入课本单词」→ 把单词粘贴进去即可（也支持上传 .txt / .csv 文件）。</p>
-          <p>格式很简单：<strong>每行一个，英文在前中文在后</strong>。</p>
-          <p>点「⬇️ 下载模板」可以拿到标准格式：<strong>英文,中文,例句</strong>（例句列选填，留空会自动配占位例句）。</p>
-          <p>系统会自动清洗排版、识别单词/短语/句子，点「解析预览」确认就能用。每 10 个单词自动生成一关。</p>
-          <p className="text-amber-700">同一句例句里的目标词会被挖空，做成填空题。</p>
+          <p>首页「📂 导入课本单词」→ 粘贴进去即可（也支持上传 .txt / .csv 文件）。</p>
+          <p>点「⬇️ 下载模板」拿到标准格式，<strong>四列</strong>：</p>
+          <p className="font-mono text-xs bg-gray-50 rounded-lg px-2 py-1.5 text-gray-700">
+            序号 | 英文单词 | 短语例句 | 中文翻译
+          </p>
+          <p><strong>序号</strong>列可选，填了就能一眼核对条数、查漏（漏号会提示）。<strong>短语例句</strong>列可选，留空也行。</p>
+          <p>第一行的表头不用填，解析时会自动跳过。</p>
+          <p>也支持直接从课本复制粘贴（英文+中文，空格或逗号分隔都行），系统会自动清洗排版、识别单词/短语/句子。</p>
+          <p>点「解析预览」确认就能用。每 10 个单词自动生成一关。</p>
+          <p className="text-amber-700">例句里的目标词会被挖空，做成填空题。</p>
+          <p><strong>⚠️ 例句里如果有逗号，请用英文双引号包住</strong>（Excel 另存 CSV 会自动加，手写粘贴不会）。</p>
+        </Section>
+
+        <Section emoji="📚" title="导入记录">
+          <p>每次导入都会<strong>新增一组，不覆盖之前的</strong>，可以导入多套课本。</p>
+          <p>在导入弹窗切到「📚 导入记录」标签：</p>
+          <p>· 给每组<strong>起个名字</strong>（如「三年级上册 Unit1」）</p>
+          <p>· 展开可以<strong>查看和修改</strong>当时上传的每个词条，也能补词、删词</p>
+          <p>· 单组删除或全部删除都可以</p>
+          <p className="text-gray-500">改了词条后，关卡会自动重新计算。</p>
+        </Section>
+
+        <Section emoji="☁️" title="跨设备同步（即将上线）">
+          <p>目前学习进度和词库<strong>只存在这台设备上</strong>，换设备要重新导入。</p>
+          <p>同步功能正在做，计划包含：</p>
+          <p>· 家长用邮箱 + 验证码登录，孩子不用记账号</p>
+          <p>· 进度、积分、词库、跟读记录多设备共享</p>
+          <p>· <strong>不上传孩子的录音</strong>，跟读录音只在设备内存里当场回放</p>
+          <p>· 没登录也完全能用 —— 同步是增强，不是门槛</p>
+          <p className="text-gray-400">首页「☁️ 跨设备同步」「👨‍👩‍👧 家长区」「📊 学习报告」入口可以先看规划。</p>
         </Section>
 
         <Section emoji="🗣️" title="跟读练习">
@@ -117,6 +142,7 @@ export function GuidePage({ onClose }: Props) {
 
         <Section emoji="💾" title="数据存储">
           <p>学习进度、口语分、跟读记录和词库都保存在<strong>当前设备的浏览器</strong>中，不上传任何服务器。</p>
+          <p className="text-gray-500">跨设备同步上线后，也可以在家长区开启同步，让多台设备共享进度。</p>
           <p className="text-amber-700">⚠️ 换用其他手机/平板/iPad，或同一设备换浏览器，都需要重新导入词库。</p>
         </Section>
 

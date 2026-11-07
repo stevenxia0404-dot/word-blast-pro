@@ -7,5 +7,7 @@ Thumbs.db
 .wrangler/
 
 # 回归测试构建产物
-tests/*.js
-tests/*.cjs
+tests/_l1_test.js
+tests/_l2_test.js
+tests/_parser_v3.js
+tests/_cloze_test.js
