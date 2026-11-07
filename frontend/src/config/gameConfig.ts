@@ -1,7 +1,20 @@
+export type VocabType = 'word' | 'phrase' | 'sentence'
+
 export interface VocabItem {
   id: number
   en: string
   zh: string
+  /** 词条类型：单词 / 短语 / 句子。旧存档缺省时按 en 推导，无需手填 */
+  type?: VocabType
+  /** 例句（例句完形的语境）。缺省时：单词走占位句、短语/句子用自身；正式例句由内容资料替换 */
+  sentence?: string
+}
+
+/** 词条分类：句末标点 → 句子；含空格 → 短语；其余 → 单词（解析层共用） */
+export function classifyVocab(en: string): VocabType {
+  if (/[.!?]$/.test(en.trim())) return 'sentence'
+  if (/\s/.test(en)) return 'phrase'
+  return 'word'
 }
 
 export interface LevelConfig {
@@ -158,9 +171,10 @@ export const VOCABULARY: VocabItem[] = [
   { id: 123, en: 'I see a frog by the lake.', zh: '我在湖边看到一只青蛙。' },
   { id: 124, en: "It's time for bed.", zh: '睡觉时间到了。' },
   { id: 125, en: 'I pack my schoolbag.', zh: '我整理书包。' },
-]
+].map(v => ({ ...v, type: classifyVocab(v.en) }))
 
-/* ── 关卡定义 ── */
+/* ── 关卡定义（12 关：单词 1-10 + 运用关 11-12）── */
+/* 消消乐 / 字母拼写只放单词；短语、句子全部归完形家族（运用关） */
 
 export const LEVELS: LevelConfig[] = [
   { id: 1, name: '日常动作与动物', cols: 3, rows: 4, wordIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
@@ -173,9 +187,8 @@ export const LEVELS: LevelConfig[] = [
   { id: 8, name: '运动与时间', cols: 3, rows: 4, wordIds: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80] },
   { id: 9, name: '基础词汇', cols: 3, rows: 4, wordIds: [81, 82, 83, 84, 85, 86, 87, 88, 89, 90] },
   { id: 10, name: '日常生活', cols: 3, rows: 4, wordIds: [91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102] },
-  { id: 11, name: '核心短语①', cols: 2, rows: 3, wordIds: [103, 104, 105, 106, 107, 108, 109] },
-  { id: 12, name: '核心短语②', cols: 2, rows: 3, wordIds: [110, 111, 112, 113, 114, 115, 116, 117] },
-  { id: 13, name: '完整句子', cols: 2, rows: 3, wordIds: [118, 119, 120, 121, 122, 123, 124, 125] },
+  { id: 11, name: '短语运用', cols: 2, rows: 3, wordIds: [103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117] },
+  { id: 12, name: '句子运用', cols: 2, rows: 2, wordIds: [118, 119, 120, 121, 122, 123, 124, 125] },
 ]
 
 /* ── 小节类型 ── */
@@ -192,21 +205,41 @@ export function getSubsections(levelId: number): SubsectionDef[] {
     return [
       { type: 'match', label: '配对消消' },
       { type: 'spell', label: '字母拼写' },
-      { type: 'cloze', label: '完形填空' },
+      { type: 'cloze', label: '例句填空' },
     ]
   }
-  if (levelId <= 12) {
+  if (levelId === 11) {
     return [
-      { type: 'match', label: '短语配对' },
+      { type: 'cloze', label: '短语填空' },
       { type: 'wordSelect', label: '选词拼短语' },
-      { type: 'wordOrder', label: '单词拼写' },
+      { type: 'cloze', label: '短语填空 · 换个空' },
     ]
   }
   return [
-    { type: 'match', label: '句子配对' },
-    { type: 'cloze', label: '完形填空' },
+    { type: 'cloze', label: '句子填空' },
     { type: 'wordOrder', label: '连词成句' },
+    { type: 'cloze', label: '混合填空' },
   ]
+}
+
+/* ── 例句：正式例句由内容资料提供，占位句供开发期测试 ── */
+
+const SENTENCE_TEMPLATES = [
+  'I can see a {w}.',
+  'This is a {w}.',
+  'I like the {w}.',
+  'Look at the {w}!',
+  'The {w} is very nice.',
+  'Can you say {w}?',
+]
+
+/** 取词条例句：有正式例句用正式的；单词缺省套占位模板；短语/句子用自身 */
+export function getExampleSentence(item: VocabItem): string {
+  if (item.sentence) return item.sentence
+  const type = item.type ?? classifyVocab(item.en)
+  if (type !== 'word') return item.en
+  const tpl = SENTENCE_TEMPLATES[item.id % SENTENCE_TEMPLATES.length]
+  return tpl.replace('{w}', item.en)
 }
 
 /* ── 颜色主题 ── */
@@ -232,6 +265,9 @@ export const SCORE = {
   comboBonus: 50,
   helpCost: [0, 300, 500, 800] as const,
   helpScore: [0, 30, 10, 0] as const,
+  /* 跟读练习：首次「我会了」全额、复习小额；慢速不扣分（需要慢速是学习过程） */
+  repeatFirst: 60,
+  repeatReview: 10,
 }
 
 /* ── 称号 ── */

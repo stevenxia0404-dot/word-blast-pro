@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import type { VocabItem, LevelConfig } from '../config/gameConfig'
 import { previewParse, finalizeImport, generateCsvTemplate } from '../config/wordParser'
-import type { PreviewItem } from '../config/wordParser'
+import type { PreviewItem, PreviewResult } from '../config/wordParser'
 
 interface VocabGroup {
   id: string
@@ -21,7 +21,7 @@ interface Props {
 
 export function WordImport({ hasCustomVocab, groups, onImport, onDeleteGroup, onClearAll, onClose }: Props) {
   const [text, setText] = useState('')
-  const [preview, setPreview] = useState<{ items: PreviewItem[]; errors: string[]; dupCount: number } | null>(null)
+  const [preview, setPreview] = useState<PreviewResult | null>(null)
   const [filterProblems, setFilterProblems] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -118,8 +118,8 @@ export function WordImport({ hasCustomVocab, groups, onImport, onDeleteGroup, on
         </h2>
         <p className="text-xs text-gray-400 text-center mb-3">
           {preview
-            ? `${preview.items.length} 条成功 · ${preview.errors.length} 条未识别 · ${preview.dupCount} 条重复`
-            : '格式很简单：英文+中文，一行一个。从课本、PDF、网页复制过来就能自动识别~'}
+            ? `${preview.items.length} 条成功 · ${preview.errors.length} 条未识别 · ${preview.dupCount} 条重复（单词 ${preview.typeCounts.word} · 短语 ${preview.typeCounts.phrase} · 句子 ${preview.typeCounts.sentence}）`
+            : '一行一个：英文+中文（例句选填第三项）。从课本、PDF、网页复制过来就能自动识别~'}
         </p>
 
         {preview ? (
@@ -131,6 +131,7 @@ export function WordImport({ hasCustomVocab, groups, onImport, onDeleteGroup, on
                   <tr className="text-left text-xs text-gray-500">
                     <th className="p-2 w-12">#</th>
                     <th className="p-2 w-12">状态</th>
+                    <th className="p-2 w-16">类型</th>
                     <th className="p-2">英文</th>
                     <th className="p-2">中文</th>
                   </tr>
@@ -144,7 +145,12 @@ export function WordImport({ hasCustomVocab, groups, onImport, onDeleteGroup, on
                     >
                       <td className="p-2 text-gray-400 text-xs">{idx + 1}</td>
                       <td className="p-2">{item.confidence === 'low' ? '⚠️' : '✅'}</td>
-                      <td className="p-2 font-medium">{item.en}</td>
+                      <td className="p-2">
+                        <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${item.type === 'word' ? 'bg-blue-100 text-blue-700' : item.type === 'phrase' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                          {item.type === 'word' ? '单词' : item.type === 'phrase' ? '短语' : '句子'}
+                        </span>
+                      </td>
+                      <td className="p-2 font-medium" title={item.sentence}>{item.en}</td>
                       <td className="p-2 text-gray-600">{item.zh}</td>
                     </tr>
                   ))}
@@ -152,7 +158,7 @@ export function WordImport({ hasCustomVocab, groups, onImport, onDeleteGroup, on
                     <tr key={`err-${i}`} className="border-t border-gray-100 bg-red-50">
                       <td className="p-2 text-gray-400 text-xs">-</td>
                       <td className="p-2">❌</td>
-                      <td className="p-2 text-red-600 text-xs" colSpan={2} title={err}>{err}</td>
+                      <td className="p-2 text-red-600 text-xs" colSpan={3} title={err}>{err}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -193,7 +199,7 @@ export function WordImport({ hasCustomVocab, groups, onImport, onDeleteGroup, on
               ref={textareaRef}
               value={text}
               onChange={e => { setText(e.target.value); setPreview(null) }}
-              placeholder={`apple 苹果\ncat 猫\ndog 狗\nkeep tidy 保持整洁\nsports field 运动场\nclassroom 教室\n…`}
+              placeholder={`apple 苹果\ncat 猫\ndog 狗 I have a dog.（例句选填）\nkeep tidy 保持整洁\nsports field 运动场\nclassroom 教室\n…`}
               className="flex-1 min-h-[280px] sm:min-h-[360px] border-2 border-gray-200 rounded-2xl p-3 text-sm resize-none focus:outline-none focus:border-lime-400 transition-colors font-mono"
               spellCheck={false}
             />

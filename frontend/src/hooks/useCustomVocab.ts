@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import type { VocabItem, LevelConfig } from '../config/gameConfig'
-import { CUSTOM_VOCAB_KEY } from '../config/wordParser'
+import { classifyVocab } from '../config/gameConfig'
+import { CUSTOM_VOCAB_KEY, generateLevels } from '../config/wordParser'
 
 interface VocabGroup {
   id: string
@@ -63,29 +64,12 @@ function buildCombined(groups: VocabGroup[]): { vocab: VocabItem[]; levels: Leve
   let id = 1
   for (const g of groups) {
     for (const v of g.vocab) {
-      vocab.push({ ...v, id: id++ })
+      // 旧存档词条缺 type：入口补判，一次到位
+      vocab.push({ ...v, id: id++, type: v.type ?? classifyVocab(v.en) })
     }
   }
   const levels = generateLevels(vocab)
   return { vocab, levels }
-}
-
-/* ── Level generation (same logic as wordParser.ts) ── */
-
-function generateLevels(vocab: VocabItem[]): LevelConfig[] {
-  if (vocab.length < 2) return []
-  const hasPhrase = vocab.some(v => v.en.includes(' '))
-  const WORDS_PER_LEVEL = 10
-  const levels: LevelConfig[] = []
-  for (let i = 0, lid = 1; i < vocab.length; i += WORDS_PER_LEVEL, lid++) {
-    const chunk = vocab.slice(i, i + WORDS_PER_LEVEL)
-    if (chunk.length < 2) break
-    const cols = (hasPhrase || chunk.some(v => v.en.length > 8)) ? 2 : (chunk.length <= 6 ? 2 : 3)
-    const rows = Math.ceil(chunk.length / cols)
-    const name = chunk.slice(0, 3).map(v => v.zh).join('、') + (chunk.length > 3 ? '…' : '')
-    levels.push({ id: lid, name, cols, rows, wordIds: chunk.map(v => v.id) })
-  }
-  return levels
 }
 
 /* ── Hook ── */
