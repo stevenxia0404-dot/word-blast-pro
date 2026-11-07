@@ -27,7 +27,8 @@ export function GuidePage({ onClose }: Props) {
 
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-5">
         <Section emoji="🎯" title="游戏流程">
-          <p>逐关挑战，每关包含<strong>不同玩法的小节</strong>，从左到右依次完成。</p>
+          <p>首页选「🎮 闯关练习」，逐关挑战，每关包含<strong>不同玩法的小节</strong>，从左到右依次完成。</p>
+          <p>关卡分为<strong>单词关</strong>和<strong>运用关</strong>：单词关只放单词（消消乐、字母拼写、例句填空），短语和句子统一放在后面的运用关。</p>
           <p>全部通关后获得 <strong>🏆 毕业证书</strong>，可无限重玩。</p>
           <p className="text-emerald-600">导入自定义词库后，每 <strong>10 个单词</strong>自动生成一关。</p>
         </Section>
@@ -38,7 +39,7 @@ export function GuidePage({ onClose }: Props) {
           <p><strong>完形填空</strong> — 从候选词中选出句子缺失的单词。</p>
           <p><strong>选词拼短语</strong> — 从词库中挑选正确单词组成短语。</p>
           <p><strong>连词成句</strong> — 将打乱的单词排成正确的句子。</p>
-          <p className="text-emerald-600 text-xs mt-2">基础阶段使用前三种，短语/句子阶段使用后几种，每关小节组合不同。</p>
+          <p className="text-emerald-600 text-xs mt-2">单词关用前三种；短语和句子统一放进「运用关」，用完形、选词拼短语、连词成句练。</p>
         </Section>
 
         <Section emoji="⭐" title="积分与 Combo">
@@ -56,11 +57,33 @@ export function GuidePage({ onClose }: Props) {
           </div>
         </Section>
 
-        <Section emoji="📂" title="自定义词库">
+        <Section emoji="📂" title="导入课本单词与模板">
           <p>孩子课本、练习册上的单词都能导进来！</p>
-          <p>欢迎页点击「导入自定义词库」→ 把单词粘贴进去即可。</p>
-          <p>格式很简单：<strong>每行一个，英文在前中文在后</strong>（电脑上操作更方便，支持上传文件）。</p>
-          <p>系统会自动清洗排版，点「解析预览」确认就能用。每 10 个单词自动生成一关。</p>
+          <p>首页底部「📂 导入课本单词」→ 把单词粘贴进去即可（也支持上传 .txt / .csv 文件）。</p>
+          <p>格式很简单：<strong>每行一个，英文在前中文在后</strong>。</p>
+          <p>点「⬇️ 下载模板」可以拿到标准格式：<strong>英文,中文,例句</strong>（例句列选填，留空会自动配占位例句）。</p>
+          <p>系统会自动清洗排版、识别单词/短语/句子，点「解析预览」确认就能用。每 10 个单词自动生成一关。</p>
+          <p className="text-amber-700">同一句例句里的目标词会被挖空，做成填空题。</p>
+        </Section>
+
+        <Section emoji="🗣️" title="跟读练习">
+          <p>首页选「🗣️ 跟读练习」，三步走：</p>
+          <p><strong>① 听</strong> — 听标准发音（可切「🐢 慢速」逐词模仿）</p>
+          <p><strong>② 读</strong> — 点大麦克风跟读一遍（最长 10 秒自动停）</p>
+          <p><strong>③ 比</strong> — 「标准音 ↔ 我的录音」来回对比，自己评「我会了」或「再试一次」</p>
+          <p>首次学会 <strong>+60 分</strong>，复习 <strong>+10 分</strong>，<strong>口语分独立记账</strong>，与闯关分相加决定称号。</p>
+          <p className="text-emerald-700">🔒 录音只在手机内存里当场回放，用完即释放，<strong>不保存、不上传</strong>。</p>
+          <p className="text-amber-700">⚠️ 微信/QQ 内置浏览器不支持录音，请用 Safari 或 Chrome 打开。</p>
+        </Section>
+
+        <Section emoji="💬" title="对话练习（即将上线）">
+          <p>一问一答的对话模式：应用当提问者，孩子录音回答，再和标准回答对比回放。</p>
+          <p className="text-gray-400">即将上线，首页已有入口敬请期待。</p>
+        </Section>
+
+        <Section emoji="🔊" title="发音说明">
+          <p>所有单词、句子都用<strong>同一位童声</strong>提前录制好（正常速 + 慢速两版），任何设备播出来都是一样的。</p>
+          <p className="text-gray-400">自己导入的单词不在录音库里时，会自动改用系统语音朗读。</p>
         </Section>
 
         <Section emoji="💬" title="反馈">
@@ -70,6 +93,7 @@ export function GuidePage({ onClose }: Props) {
 
         <Section emoji="🌟" title="星级与称号">
           <p>每关结束后按正确率评定 <strong>1-3 星</strong>（≥90% 三星，≥70% 两星）。</p>
+          <p className="text-emerald-700">称号按<strong>闯关分 + 口语分</strong>总和判定，口语练习也能挣称号。</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {[
               { emoji: '🌱', name: '英语小芽', score: '0' },
@@ -92,7 +116,7 @@ export function GuidePage({ onClose }: Props) {
         </Section>
 
         <Section emoji="💾" title="数据存储">
-          <p>学习进度和词库保存在<strong>当前设备的浏览器</strong>中，不上传任何服务器。</p>
+          <p>学习进度、口语分、跟读记录和词库都保存在<strong>当前设备的浏览器</strong>中，不上传任何服务器。</p>
           <p className="text-amber-700">⚠️ 换用其他手机/平板/iPad，或同一设备换浏览器，都需要重新导入词库。</p>
         </Section>
 
@@ -120,7 +144,7 @@ export function GuidePage({ onClose }: Props) {
       </div>
 
       <div className="h-8" />
-      <p className="text-center text-white/60 text-xs pb-6">v2.0</p>
+      <p className="text-center text-white/60 text-xs pb-6">v3.0</p>
     </div>
   )
 }
