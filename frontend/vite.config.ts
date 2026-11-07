@@ -30,6 +30,28 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         skipWaiting: true,
         clientsClaim: true,
+        // 音频 4MB+ 不进 precache（首屏不下载）；播放过的走 CacheFirst 离线可听
+        runtimeCaching: [
+          {
+            // manifest 在线优先：换词库后能立刻拿到新清单；音频文件名是内容哈希，永远不用失效
+            urlPattern: /\/audio\/manifest\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'wb-audio-manifest',
+              networkTimeoutSeconds: 4,
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/audio\/.*\.mp3$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'wb-audio-v1',
+              expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 180 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],
