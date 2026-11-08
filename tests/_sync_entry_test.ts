@@ -17,7 +17,7 @@ const ok = (c, l, e = '') => { if (c) console.log('  ✅', l); else { fail++; co
   const page = await ctx.newPage()
   const errors = []
   page.on('pageerror', e => errors.push(e.message))
-  await ctx.addInitScript(() => { try { localStorage.setItem('wordblast_banner_v2','v3.0') } catch {} })
+  await ctx.addInitScript(() => { try { localStorage.setItem('wordblast_banner_v2','v3.1') } catch {} })
   await page.goto(BASE, { waitUntil: 'domcontentloaded' })
   await page.reload({ waitUntil: 'domcontentloaded' })
   await page.waitForTimeout(1200)

@@ -137,7 +137,7 @@ export function HomeScreen({
           </div>
           <p className="text-[11px] text-lime-600 mb-1">（词库保存在当前设备上 · 跨设备同步即将上线）</p>
 
-          <p className="text-[11px] text-emerald-400 mt-1">v3.0</p>
+          <p className="text-[11px] text-emerald-400 mt-1">v3.1</p>
         </div>
       </div>
     </div>

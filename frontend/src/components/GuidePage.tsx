@@ -28,18 +28,20 @@ export function GuidePage({ onClose }: Props) {
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-5">
         <Section emoji="🎯" title="游戏流程">
           <p>首页选「🎮 闯关练习」，逐关挑战，每关包含<strong>不同玩法的小节</strong>，从左到右依次完成。</p>
-          <p>关卡分为<strong>单词关</strong>和<strong>运用关</strong>：单词关只放单词（消消乐、字母拼写、例句填空），短语和句子统一放在后面的运用关。</p>
+          <p>内置<strong>3A 教材 Unit 1-5</strong> 的 66 个词汇和 50 个句子，分三类关卡：</p>
+          <p>· <strong>单词关 ×5</strong>（50 个单词）—— 配对消消 + 字母拼写</p>
+          <p>· <strong>短语关 ×2</strong>（16 个短语）—— 短语填空 + 选词拼短语</p>
+          <p>· <strong>句子关 ×5</strong>（50 个教材句子）—— 句子填空</p>
           <p>全部通关后获得 <strong>🏆 毕业证书</strong>，可无限重玩。</p>
-          <p className="text-emerald-600">导入自定义词库后，每 <strong>10 个单词</strong>自动生成一关。</p>
+          <p className="text-emerald-600">导入自定义词库后，会按词条类型自动生成对应关卡。</p>
         </Section>
 
-        <Section emoji="🎮" title="五种玩法">
+        <Section emoji="🎮" title="四种玩法">
           <p><strong>配对消消</strong> — 点击中英文卡片，配对消除。</p>
           <p><strong>字母拼写</strong> — 按顺序点击字母拼出单词。</p>
           <p><strong>完形填空</strong> — 从候选词中选出句子缺失的单词。</p>
           <p><strong>选词拼短语</strong> — 从词库中挑选正确单词组成短语。</p>
-          <p><strong>连词成句</strong> — 将打乱的单词排成正确的句子。</p>
-          <p className="text-emerald-600 text-xs mt-2">单词关用前三种；短语和句子统一放进「运用关」，用完形、选词拼短语、连词成句练。</p>
+          <p className="text-emerald-600 text-xs mt-2">单词关用前两种；短语关用完形 + 选词拼短语；句子关全部用完形填空，挖的是<strong>教材原句</strong>里的词。</p>
         </Section>
 
         <Section emoji="⭐" title="积分与 Combo">
@@ -170,7 +172,7 @@ export function GuidePage({ onClose }: Props) {
       </div>
 
       <div className="h-8" />
-      <p className="text-center text-white/60 text-xs pb-6">v3.0</p>
+      <p className="text-center text-white/60 text-xs pb-6">v3.1</p>
     </div>
   )
 }

@@ -32,7 +32,7 @@ const TEMPLATE = `序号,英文单词,短语例句,中文翻译
   page.on('pageerror', e => errors.push('pageerror: ' + e.message))
 
   await ctx.addInitScript(() => {
-    try { localStorage.setItem('wordblast_banner_v2', 'v3.0') } catch {}
+    try { localStorage.setItem('wordblast_banner_v2', 'v3.1') } catch {}
   })
   await page.goto(BASE, { waitUntil: 'domcontentloaded' })
   await page.evaluate(() => {
