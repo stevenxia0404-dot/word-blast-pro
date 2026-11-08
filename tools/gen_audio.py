@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """gen_audio.py — Word Blast Pro 音频生成脚本
 
-从 frontend/src/config/gameConfig.ts 提取 VOCABULARY，用 edge-tts 批量合成 mp3
+从 frontend/src/config/gameConfig.ts 提取 ALL_ITEMS（词汇 + 教材句子），用 edge-tts 批量合成 mp3
 到 frontend/public/audio/，并生成 manifest.json（文本 → 文件名映射）。
 
 设计沿袭公务英语 AI 陪练的 gen_audio.py：
@@ -53,7 +53,7 @@ def extract_vocab():
     if r.returncode != 0:
         sys.exit(f"[错误] esbuild 编译 gameConfig.ts 失败：{r.stderr.strip()}")
     js = "const g = require(" + json.dumps(TMP_CJS.replace('\\', '/')) + ");" \
-         "process.stdout.write(JSON.stringify(g.VOCABULARY))"
+         "process.stdout.write(JSON.stringify(g.ALL_ITEMS))"
     r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=30)
     if r.returncode != 0:
         sys.exit(f"[错误] node 提取词库失败：{r.stderr.strip()}")
@@ -127,6 +127,8 @@ def main():
     os.makedirs(AUDIO_DIR, exist_ok=True)
     asyncio.run(run(args.dry_run))
 
+    # 清理必须在 manifest 写入之后 —— 否则读的是旧 manifest，
+    # 会把「刚生成但还没写进新 manifest」的文件当成孤儿删掉
     if args.clean and os.path.exists(MANIFEST):
         with open(MANIFEST, encoding="utf-8") as f:
             keep = set()

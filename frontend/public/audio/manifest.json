@@ -1,124 +1,188 @@
 {
  "ana": {
-  "robot": {
-   "n": "a_n_87b7cb7.mp3",
-   "s": "a_s_87b7cb7.mp3"
+  "new": {
+   "n": "a_n_22af645.mp3",
+   "s": "a_s_22af645.mp3"
   },
-  "music": {
-   "n": "a_n_18d6769.mp3",
-   "s": "a_s_18d6769.mp3"
+  "school": {
+   "n": "a_n_7516c3b.mp3",
+   "s": "a_s_7516c3b.mp3"
   },
-  "talk": {
-   "n": "a_n_64b5971.mp3",
-   "s": "a_s_64b5971.mp3"
-  },
-  "sing": {
-   "n": "a_n_db853ec.mp3",
-   "s": "a_s_db853ec.mp3"
-  },
-  "dance": {
-   "n": "a_n_3355d92.mp3",
-   "s": "a_s_3355d92.mp3"
-  },
-  "he": {
-   "n": "a_n_6f96cfd.mp3",
-   "s": "a_s_6f96cfd.mp3"
-  },
-  "go": {
-   "n": "a_n_34d1f91.mp3",
-   "s": "a_s_34d1f91.mp3"
-  },
-  "lion": {
-   "n": "a_n_6b42d00.mp3",
-   "s": "a_s_6b42d00.mp3"
-  },
-  "mouse": {
-   "n": "a_n_40203ab.mp3",
-   "s": "a_s_40203ab.mp3"
-  },
-  "share": {
-   "n": "a_n_85e47ac.mp3",
-   "s": "a_s_85e47ac.mp3"
-  },
-  "mother": {
-   "n": "a_n_6ee6a21.mp3",
-   "s": "a_s_6ee6a21.mp3"
-  },
-  "mum": {
-   "n": "a_n_63cd0b8.mp3",
-   "s": "a_s_63cd0b8.mp3"
-  },
-  "nice": {
-   "n": "a_n_7c6483d.mp3",
-   "s": "a_s_7c6483d.mp3"
-  },
-  "cook": {
-   "n": "a_n_e3e90fd.mp3",
-   "s": "a_s_e3e90fd.mp3"
-  },
-  "great": {
-   "n": "a_n_acaa167.mp3",
-   "s": "a_s_acaa167.mp3"
+  "classmate": {
+   "n": "a_n_d044d5b.mp3",
+   "s": "a_s_d044d5b.mp3"
   },
   "teacher": {
    "n": "a_n_8d78838.mp3",
    "s": "a_s_8d78838.mp3"
   },
-  "good": {
-   "n": "a_n_755f85c.mp3",
-   "s": "a_s_755f85c.mp3"
+  "play sports": {
+   "n": "a_n_2212704.mp3",
+   "s": "a_s_2212704.mp3"
   },
-  "super": {
-   "n": "a_n_1b32316.mp3",
-   "s": "a_s_1b32316.mp3"
+  "read": {
+   "n": "a_n_ecae131.mp3",
+   "s": "a_s_ecae131.mp3"
   },
-  "plant": {
-   "n": "a_n_9ea0a36.mp3",
-   "s": "a_s_9ea0a36.mp3"
+  "book": {
+   "n": "a_n_821f032.mp3",
+   "s": "a_s_821f032.mp3"
   },
-  "tree": {
-   "n": "a_n_c0af77c.mp3",
-   "s": "a_s_c0af77c.mp3"
+  "study": {
+   "n": "a_n_2cd1c6e.mp3",
+   "s": "a_s_2cd1c6e.mp3"
   },
-  "root": {
-   "n": "a_n_63a9f0e.mp3",
-   "s": "a_s_63a9f0e.mp3"
+  "hard": {
+   "n": "a_n_d64a844.mp3",
+   "s": "a_s_d64a844.mp3"
   },
-  "roots": {
-   "n": "a_n_c5f6f58.mp3",
-   "s": "a_s_c5f6f58.mp3"
+  "goal": {
+   "n": "a_n_a389857.mp3",
+   "s": "a_s_a389857.mp3"
   },
-  "trunk": {
-   "n": "a_n_8d0411b.mp3",
-   "s": "a_s_8d0411b.mp3"
+  "want": {
+   "n": "a_n_a3186a3.mp3",
+   "s": "a_s_a3186a3.mp3"
   },
-  "branch": {
-   "n": "a_n_9603a22.mp3",
-   "s": "a_s_9603a22.mp3"
+  "friend": {
+   "n": "a_n_3af00c6.mp3",
+   "s": "a_s_3af00c6.mp3"
   },
-  "branches": {
-   "n": "a_n_92ec19f.mp3",
-   "s": "a_s_92ec19f.mp3"
+  "plan": {
+   "n": "a_n_5fc2515.mp3",
+   "s": "a_s_5fc2515.mp3"
   },
-  "leaf": {
-   "n": "a_n_bab4ff0.mp3",
-   "s": "a_s_bab4ff0.mp3"
+  "follow": {
+   "n": "a_n_a401094.mp3",
+   "s": "a_s_a401094.mp3"
   },
-  "leaves": {
-   "n": "a_n_79f7d2e.mp3",
-   "s": "a_s_79f7d2e.mp3"
+  "start": {
+   "n": "a_n_ea2b267.mp3",
+   "s": "a_s_ea2b267.mp3"
+  },
+  "draw": {
+   "n": "a_n_817491b.mp3",
+   "s": "a_s_817491b.mp3"
+  },
+  "dance": {
+   "n": "a_n_3355d92.mp3",
+   "s": "a_s_3355d92.mp3"
+  },
+  "sing": {
+   "n": "a_n_db853ec.mp3",
+   "s": "a_s_db853ec.mp3"
+  },
+  "run": {
+   "n": "a_n_a53108f.mp3",
+   "s": "a_s_a53108f.mp3"
+  },
+  "tell a story": {
+   "n": "a_n_54399ff.mp3",
+   "s": "a_s_54399ff.mp3"
+  },
+  "use the computer": {
+   "n": "a_n_3b29c44.mp3",
+   "s": "a_s_3b29c44.mp3"
+  },
+  "be good at": {
+   "n": "a_n_f5eac18.mp3",
+   "s": "a_s_f5eac18.mp3"
+  },
+  "jump": {
+   "n": "a_n_ba535ef.mp3",
+   "s": "a_s_ba535ef.mp3"
+  },
+  "umbrella": {
+   "n": "a_n_b74012a.mp3",
+   "s": "a_s_b74012a.mp3"
+  },
+  "proud": {
+   "n": "a_n_a3e0f65.mp3",
+   "s": "a_s_a3e0f65.mp3"
+  },
+  "riddle": {
+   "n": "a_n_0c5d88f.mp3",
+   "s": "a_s_0c5d88f.mp3"
+  },
+  "predict": {
+   "n": "a_n_59a9f87.mp3",
+   "s": "a_s_59a9f87.mp3"
+  },
+  "expression": {
+   "n": "a_n_63973cd.mp3",
+   "s": "a_s_63973cd.mp3"
+  },
+  "special": {
+   "n": "a_n_0bd6506.mp3",
+   "s": "a_s_0bd6506.mp3"
+  },
+  "act out": {
+   "n": "a_n_430007d.mp3",
+   "s": "a_s_430007d.mp3"
+  },
+  "garden": {
+   "n": "a_n_e2704f3.mp3",
+   "s": "a_s_e2704f3.mp3"
+  },
+  "tomato": {
+   "n": "a_n_006f878.mp3",
+   "s": "a_s_006f878.mp3"
   },
   "flower": {
    "n": "a_n_608f0b9.mp3",
    "s": "a_s_608f0b9.mp3"
   },
-  "grass": {
-   "n": "a_n_09d440e.mp3",
-   "s": "a_s_09d440e.mp3"
+  "strawberry": {
+   "n": "a_n_495bf98.mp3",
+   "s": "a_s_495bf98.mp3"
   },
-  "pond": {
-   "n": "a_n_d873154.mp3",
-   "s": "a_s_d873154.mp3"
+  "vegetable": {
+   "n": "a_n_4bd349c.mp3",
+   "s": "a_s_4bd349c.mp3"
+  },
+  "leaf": {
+   "n": "a_n_bab4ff0.mp3",
+   "s": "a_s_bab4ff0.mp3"
+  },
+  "plant": {
+   "n": "a_n_9ea0a36.mp3",
+   "s": "a_s_9ea0a36.mp3"
+  },
+  "grow": {
+   "n": "a_n_4d200fc.mp3",
+   "s": "a_s_4d200fc.mp3"
+  },
+  "carrot": {
+   "n": "a_n_005d05d.mp3",
+   "s": "a_s_005d05d.mp3"
+  },
+  "tea": {
+   "n": "a_n_7239ea2.mp3",
+   "s": "a_s_7239ea2.mp3"
+  },
+  "orange tree": {
+   "n": "a_n_4319ac9.mp3",
+   "s": "a_s_4319ac9.mp3"
+  },
+  "school garden report": {
+   "n": "a_n_915e23a.mp3",
+   "s": "a_s_915e23a.mp3"
+  },
+  "cloud": {
+   "n": "a_n_a1234b3.mp3",
+   "s": "a_s_a1234b3.mp3"
+  },
+  "water vapour": {
+   "n": "a_n_695ab5e.mp3",
+   "s": "a_s_695ab5e.mp3"
+  },
+  "rain": {
+   "n": "a_n_23678db.mp3",
+   "s": "a_s_23678db.mp3"
+  },
+  "snow": {
+   "n": "a_n_2b93fbd.mp3",
+   "s": "a_s_2b93fbd.mp3"
   },
   "lake": {
    "n": "a_n_97d986e.mp3",
@@ -132,373 +196,273 @@
    "n": "a_n_804f743.mp3",
    "s": "a_s_804f743.mp3"
   },
-  "duck": {
-   "n": "a_n_3684667.mp3",
-   "s": "a_s_3684667.mp3"
-  },
-  "frog": {
-   "n": "a_n_938c2cc.mp3",
-   "s": "a_s_938c2cc.mp3"
-  },
-  "fish": {
-   "n": "a_n_83e4a96.mp3",
-   "s": "a_s_83e4a96.mp3"
-  },
-  "shark": {
-   "n": "a_n_da6776e.mp3",
-   "s": "a_s_da6776e.mp3"
-  },
-  "canteen": {
-   "n": "a_n_2c9e6c9.mp3",
-   "s": "a_s_2c9e6c9.mp3"
-  },
-  "toilet": {
-   "n": "a_n_4568c10.mp3",
-   "s": "a_s_4568c10.mp3"
-  },
-  "classroom": {
-   "n": "a_n_c756662.mp3",
-   "s": "a_s_c756662.mp3"
-  },
-  "dirty": {
-   "n": "a_n_32478ef.mp3",
-   "s": "a_s_32478ef.mp3"
-  },
-  "clean": {
-   "n": "a_n_123402c.mp3",
-   "s": "a_s_123402c.mp3"
-  },
-  "use": {
-   "n": "a_n_5ef76d3.mp3",
-   "s": "a_s_5ef76d3.mp3"
-  },
-  "dish": {
-   "n": "a_n_d51f95c.mp3",
-   "s": "a_s_d51f95c.mp3"
-  },
-  "dishes": {
-   "n": "a_n_65fc910.mp3",
-   "s": "a_s_65fc910.mp3"
-  },
-  "happy": {
-   "n": "a_n_56ab24c.mp3",
-   "s": "a_s_56ab24c.mp3"
-  },
-  "excited": {
-   "n": "a_n_7b849a5.mp3",
-   "s": "a_s_7b849a5.mp3"
-  },
-  "upset": {
-   "n": "a_n_3650d69.mp3",
-   "s": "a_s_3650d69.mp3"
-  },
-  "angry": {
-   "n": "a_n_6e6b4c3.mp3",
-   "s": "a_s_6e6b4c3.mp3"
-  },
-  "face": {
-   "n": "a_n_d5ca322.mp3",
-   "s": "a_s_d5ca322.mp3"
-  },
-  "eating": {
-   "n": "a_n_dfc429d.mp3",
-   "s": "a_s_dfc429d.mp3"
-  },
-  "using": {
-   "n": "a_n_78cdeac.mp3",
-   "s": "a_s_78cdeac.mp3"
-  },
-  "feed": {
-   "n": "a_n_0935338.mp3",
-   "s": "a_s_0935338.mp3"
-  },
-  "cow": {
-   "n": "a_n_81566e9.mp3",
-   "s": "a_s_81566e9.mp3"
-  },
-  "cows": {
-   "n": "a_n_b84b7c7.mp3",
-   "s": "a_s_b84b7c7.mp3"
-  },
-  "see": {
-   "n": "a_n_1e8e42b.mp3",
-   "s": "a_s_1e8e42b.mp3"
-  },
-  "film": {
-   "n": "a_n_bdbd6db.mp3",
-   "s": "a_s_bdbd6db.mp3"
-  },
-  "visit": {
-   "n": "a_n_9de70f6.mp3",
-   "s": "a_s_9de70f6.mp3"
-  },
-  "grandma": {
-   "n": "a_n_a5d19cd.mp3",
-   "s": "a_s_a5d19cd.mp3"
-  },
-  "grandpa": {
-   "n": "a_n_224c1c8.mp3",
-   "s": "a_s_224c1c8.mp3"
-  },
-  "and": {
-   "n": "a_n_be5d5d3.mp3",
-   "s": "a_s_be5d5d3.mp3"
-  },
-  "time": {
-   "n": "a_n_07cc694.mp3",
-   "s": "a_s_07cc694.mp3"
-  },
-  "do": {
-   "n": "a_n_d4579b2.mp3",
-   "s": "a_s_d4579b2.mp3"
-  },
-  "housework": {
-   "n": "a_n_f00d686.mp3",
-   "s": "a_s_f00d686.mp3"
-  },
-  "tidy": {
-   "n": "a_n_3513bf8.mp3",
-   "s": "a_s_3513bf8.mp3"
-  },
-  "room": {
-   "n": "a_n_fef2576.mp3",
-   "s": "a_s_fef2576.mp3"
-  },
-  "make": {
-   "n": "a_n_099dafc.mp3",
-   "s": "a_s_099dafc.mp3"
-  },
-  "bed": {
-   "n": "a_n_001cbc0.mp3",
-   "s": "a_s_001cbc0.mp3"
-  },
-  "clap": {
-   "n": "a_n_bb5b2ae.mp3",
-   "s": "a_s_bb5b2ae.mp3"
-  },
-  "hands": {
-   "n": "a_n_6c8d615.mp3",
-   "s": "a_s_6c8d615.mp3"
-  },
-  "play": {
-   "n": "a_n_a3b34c0.mp3",
-   "s": "a_s_a3b34c0.mp3"
-  },
-  "game": {
-   "n": "a_n_c8d46d3.mp3",
-   "s": "a_s_c8d46d3.mp3"
-  },
-  "have": {
-   "n": "a_n_b42dad5.mp3",
-   "s": "a_s_b42dad5.mp3"
-  },
-  "sports": {
-   "n": "a_n_088495f.mp3",
-   "s": "a_s_088495f.mp3"
-  },
-  "field": {
-   "n": "a_n_06e3d36.mp3",
-   "s": "a_s_06e3d36.mp3"
-  },
-  "wash": {
-   "n": "a_n_15c74da.mp3",
-   "s": "a_s_15c74da.mp3"
-  },
-  "my": {
-   "n": "a_n_6864f38.mp3",
-   "s": "a_s_6864f38.mp3"
-  },
-  "i": {
-   "n": "a_n_dd75367.mp3",
-   "s": "a_s_dd75367.mp3"
-  },
-  "after": {
-   "n": "a_n_632a240.mp3",
-   "s": "a_s_632a240.mp3"
-  },
-  "before": {
-   "n": "a_n_2f44417.mp3",
-   "s": "a_s_2f44417.mp3"
-  },
-  "eat": {
-   "n": "a_n_9a97eda.mp3",
-   "s": "a_s_9a97eda.mp3"
-  },
-  "the": {
-   "n": "a_n_8fc42c6.mp3",
-   "s": "a_s_8fc42c6.mp3"
-  },
-  "are": {
-   "n": "a_n_4015e9c.mp3",
-   "s": "a_s_4015e9c.mp3"
-  },
-  "green": {
-   "n": "a_n_9f27410.mp3",
-   "s": "a_s_9f27410.mp3"
-  },
-  "it": {
-   "n": "a_n_0d149b9.mp3",
-   "s": "a_s_0d149b9.mp3"
-  },
-  "has": {
-   "n": "a_n_3309a7a.mp3",
-   "s": "a_s_3309a7a.mp3"
-  },
-  "a": {
-   "n": "a_n_0cc175b.mp3",
-   "s": "a_s_0cc175b.mp3"
-  },
-  "yellow": {
-   "n": "a_n_d487dd0.mp3",
-   "s": "a_s_d487dd0.mp3"
-  },
-  "by": {
-   "n": "a_n_df3f079.mp3",
-   "s": "a_s_df3f079.mp3"
-  },
-  "is": {
-   "n": "a_n_a2a551a.mp3",
-   "s": "a_s_a2a551a.mp3"
-  },
-  "drink": {
-   "n": "a_n_0b18a3d.mp3",
-   "s": "a_s_0b18a3d.mp3"
-  },
-  "some": {
-   "n": "a_n_03d59e6.mp3",
-   "s": "a_s_03d59e6.mp3"
-  },
-  "milk": {
-   "n": "a_n_ecbdb88.mp3",
-   "s": "a_s_ecbdb88.mp3"
-  },
-  "read": {
-   "n": "a_n_ecae131.mp3",
-   "s": "a_s_ecae131.mp3"
-  },
-  "story": {
-   "n": "a_n_bec670e.mp3",
-   "s": "a_s_bec670e.mp3"
-  },
-  "say": {
-   "n": "a_n_a53ff64.mp3",
-   "s": "a_s_a53ff64.mp3"
-  },
-  "night": {
-   "n": "a_n_93a04b0.mp3",
-   "s": "a_s_93a04b0.mp3"
-  },
-  "sleep": {
-   "n": "a_n_c9fab33.mp3",
-   "s": "a_s_c9fab33.mp3"
-  },
-  "it's": {
-   "n": "a_n_398860b.mp3",
-   "s": "a_s_398860b.mp3"
-  },
-  "for": {
-   "n": "a_n_d556698.mp3",
-   "s": "a_s_d556698.mp3"
-  },
-  "pack": {
-   "n": "a_n_b484857.mp3",
-   "s": "a_s_b484857.mp3"
-  },
-  "schoolbag": {
-   "n": "a_n_1d099fe.mp3",
-   "s": "a_s_1d099fe.mp3"
-  },
-  "feed the cows": {
-   "n": "a_n_ec4016f.mp3",
-   "s": "a_s_ec4016f.mp3"
-  },
-  "see a film": {
-   "n": "a_n_6e9abe1.mp3",
-   "s": "a_s_6e9abe1.mp3"
-  },
-  "visit grandma and grandpa": {
-   "n": "a_n_a76bf86.mp3",
-   "s": "a_s_a76bf86.mp3"
-  },
-  "have a good time": {
-   "n": "a_n_60bc071.mp3",
-   "s": "a_s_60bc071.mp3"
-  },
-  "do the housework": {
-   "n": "a_n_c05f64f.mp3",
-   "s": "a_s_c05f64f.mp3"
-  },
-  "tidy my room": {
-   "n": "a_n_be3287d.mp3",
-   "s": "a_s_be3287d.mp3"
-  },
-  "make the bed": {
-   "n": "a_n_d7d6024.mp3",
-   "s": "a_s_d7d6024.mp3"
-  },
-  "clap hands": {
-   "n": "a_n_2759f38.mp3",
-   "s": "a_s_2759f38.mp3"
-  },
-  "play a game": {
-   "n": "a_n_8a9690b.mp3",
-   "s": "a_s_8a9690b.mp3"
-  },
-  "have a go": {
-   "n": "a_n_a7c39ce.mp3",
-   "s": "a_s_a7c39ce.mp3"
-  },
-  "sports field": {
-   "n": "a_n_af608f3.mp3",
-   "s": "a_s_af608f3.mp3"
-  },
-  "wash my hands": {
-   "n": "a_n_28e5940.mp3",
-   "s": "a_s_28e5940.mp3"
-  },
-  "drink some milk": {
-   "n": "a_n_dc566e7.mp3",
-   "s": "a_s_dc566e7.mp3"
-  },
-  "read a story": {
-   "n": "a_n_e118ae8.mp3",
-   "s": "a_s_e118ae8.mp3"
-  },
-  "say good night": {
-   "n": "a_n_67c6090.mp3",
-   "s": "a_s_67c6090.mp3"
-  },
-  "my mum is a great cook.": {
-   "n": "a_n_9ea3608.mp3",
-   "s": "a_s_9ea3608.mp3"
-  },
-  "i wash my hands after using the toilet.": {
-   "n": "a_n_32de3ef.mp3",
-   "s": "a_s_32de3ef.mp3"
-  },
-  "i wash my hands before eating.": {
-   "n": "a_n_74fffea.mp3",
-   "s": "a_s_74fffea.mp3"
-  },
-  "the leaves are green.": {
-   "n": "a_n_2d3ffee.mp3",
-   "s": "a_s_2d3ffee.mp3"
-  },
-  "it has a yellow flower.": {
-   "n": "a_n_87c4889.mp3",
-   "s": "a_s_87c4889.mp3"
-  },
-  "i see a frog by the lake.": {
-   "n": "a_n_8a9713c.mp3",
-   "s": "a_s_8a9713c.mp3"
-  },
-  "it's time for bed.": {
-   "n": "a_n_4c332ba.mp3",
-   "s": "a_s_4c332ba.mp3"
-  },
-  "i pack my schoolbag.": {
-   "n": "a_n_662145f.mp3",
-   "s": "a_s_662145f.mp3"
+  "water drop": {
+   "n": "a_n_0f7b000.mp3",
+   "s": "a_s_0f7b000.mp3"
+  },
+  "ice": {
+   "n": "a_n_7bdff76.mp3",
+   "s": "a_s_7bdff76.mp3"
+  },
+  "air": {
+   "n": "a_n_3c45881.mp3",
+   "s": "a_s_3c45881.mp3"
+  },
+  "sky": {
+   "n": "a_n_900bc88.mp3",
+   "s": "a_s_900bc88.mp3"
+  },
+  "lab report": {
+   "n": "a_n_b8cbc48.mp3",
+   "s": "a_s_b8cbc48.mp3"
+  },
+  "help": {
+   "n": "a_n_657f8b8.mp3",
+   "s": "a_s_657f8b8.mp3"
+  },
+  "cook": {
+   "n": "a_n_e3e90fd.mp3",
+   "s": "a_s_e3e90fd.mp3"
+  },
+  "do the dishes": {
+   "n": "a_n_c646cd3.mp3",
+   "s": "a_s_c646cd3.mp3"
+  },
+  "clean the table": {
+   "n": "a_n_42738e8.mp3",
+   "s": "a_s_42738e8.mp3"
+  },
+  "walk the dog": {
+   "n": "a_n_2269b6b.mp3",
+   "s": "a_s_2269b6b.mp3"
+  },
+  "chore": {
+   "n": "a_n_5dc1abe.mp3",
+   "s": "a_s_5dc1abe.mp3"
+  },
+  "helper": {
+   "n": "a_n_fde5d67.mp3",
+   "s": "a_s_fde5d67.mp3"
+  },
+  "give your seat": {
+   "n": "a_n_c2713fb.mp3",
+   "s": "a_s_c2713fb.mp3"
+  },
+  "help with cooking": {
+   "n": "a_n_38632ff.mp3",
+   "s": "a_s_38632ff.mp3"
+  },
+  "take my seat": {
+   "n": "a_n_3ca2e04.mp3",
+   "s": "a_s_3ca2e04.mp3"
+  },
+  "ant": {
+   "n": "a_n_63b07e8.mp3",
+   "s": "a_s_63b07e8.mp3"
+  },
+  "fox": {
+   "n": "a_n_2b95d1f.mp3",
+   "s": "a_s_2b95d1f.mp3"
+  },
+  "a new start.": {
+   "n": "a_n_af31b8e.mp3",
+   "s": "a_s_af31b8e.mp3"
+  },
+  "it's time for school.": {
+   "n": "a_n_0da9efe.mp3",
+   "s": "a_s_0da9efe.mp3"
+  },
+  "we're back at school.": {
+   "n": "a_n_c50a294.mp3",
+   "s": "a_s_c50a294.mp3"
+  },
+  "meet my classmates.": {
+   "n": "a_n_32ec042.mp3",
+   "s": "a_s_32ec042.mp3"
+  },
+  "meet my teachers.": {
+   "n": "a_n_db48df2.mp3",
+   "s": "a_s_db48df2.mp3"
+  },
+  "play new sports.": {
+   "n": "a_n_3cad96d.mp3",
+   "s": "a_s_3cad96d.mp3"
+  },
+  "read new books.": {
+   "n": "a_n_861fc53.mp3",
+   "s": "a_s_861fc53.mp3"
+  },
+  "let's study hard.": {
+   "n": "a_n_c12f1b7.mp3",
+   "s": "a_s_c12f1b7.mp3"
+  },
+  "let's play hard.": {
+   "n": "a_n_2c2c109.mp3",
+   "s": "a_s_2c2c109.mp3"
+  },
+  "we're back to school. i'm so happy.": {
+   "n": "a_n_fb02796.mp3",
+   "s": "a_s_fb02796.mp3"
+  },
+  "i want to meet my teachers and classmates.": {
+   "n": "a_n_93085f4.mp3",
+   "s": "a_s_93085f4.mp3"
+  },
+  "children, this is james. he's from new zealand.": {
+   "n": "a_n_56f5f08.mp3",
+   "s": "a_s_56f5f08.mp3"
+  },
+  "welcome, james!": {
+   "n": "a_n_d2736ac.mp3",
+   "s": "a_s_d2736ac.mp3"
+  },
+  "i'm good at drawing.": {
+   "n": "a_n_b54c3b1.mp3",
+   "s": "a_s_b54c3b1.mp3"
+  },
+  "what's wrong?": {
+   "n": "a_n_5e7e296.mp3",
+   "s": "a_s_5e7e296.mp3"
+  },
+  "it doesn't matter.": {
+   "n": "a_n_0360f12.mp3",
+   "s": "a_s_0360f12.mp3"
+  },
+  "xiaopu, you have a new friend.": {
+   "n": "a_n_7950831.mp3",
+   "s": "a_s_7950831.mp3"
+  },
+  "i feel better now.": {
+   "n": "a_n_850066b.mp3",
+   "s": "a_s_850066b.mp3"
+  },
+  "my friend frog is good at jumping.": {
+   "n": "a_n_1700f16.mp3",
+   "s": "a_s_1700f16.mp3"
+  },
+  "look, you can walk in the rain.": {
+   "n": "a_n_d0a4d09.mp3",
+   "s": "a_s_d0a4d09.mp3"
+  },
+  "you don't need an umbrella.": {
+   "n": "a_n_bdbfad8.mp3",
+   "s": "a_s_bdbfad8.mp3"
+  },
+  "my little house is great!": {
+   "n": "a_n_123e2a8.mp3",
+   "s": "a_s_123e2a8.mp3"
+  },
+  "i'm proud of myself too.": {
+   "n": "a_n_12bac78.mp3",
+   "s": "a_s_12bac78.mp3"
+  },
+  "you can see some trees, flowers and vegetables in it.": {
+   "n": "a_n_309f7cc.mp3",
+   "s": "a_s_309f7cc.mp3"
+  },
+  "what's this?": {
+   "n": "a_n_9a86f3b.mp3",
+   "s": "a_s_9a86f3b.mp3"
+  },
+  "what's that?": {
+   "n": "a_n_57fd697.mp3",
+   "s": "a_s_57fd697.mp3"
+  },
+  "this place is for vegetables.": {
+   "n": "a_n_d0a64ea.mp3",
+   "s": "a_s_d0a64ea.mp3"
+  },
+  "bees help the plants.": {
+   "n": "a_n_6a6c40d.mp3",
+   "s": "a_s_6a6c40d.mp3"
+  },
+  "we can water the plants.": {
+   "n": "a_n_9e10395.mp3",
+   "s": "a_s_9e10395.mp3"
+  },
+  "is it a tomato plant?": {
+   "n": "a_n_6dae273.mp3",
+   "s": "a_s_6dae273.mp3"
+  },
+  "i grow many tomatoes in my garden.": {
+   "n": "a_n_9697541.mp3",
+   "s": "a_s_9697541.mp3"
+  },
+  "grandpa grows lots of strawberries for you.": {
+   "n": "a_n_9bcb0d1.mp3",
+   "s": "a_s_9bcb0d1.mp3"
+  },
+  "in the air, i'm water vapour.": {
+   "n": "a_n_2a3a9be.mp3",
+   "s": "a_s_2a3a9be.mp3"
+  },
+  "little by little, i become clouds.": {
+   "n": "a_n_f0d52da.mp3",
+   "s": "a_s_f0d52da.mp3"
+  },
+  "i can be ice, to keep food nice.": {
+   "n": "a_n_2405bc9.mp3",
+   "s": "a_s_2405bc9.mp3"
+  },
+  "there are some water drops on the leaves.": {
+   "n": "a_n_1eaa404.mp3",
+   "s": "a_s_1eaa404.mp3"
+  },
+  "where do the water drops go?": {
+   "n": "a_n_6831b73.mp3",
+   "s": "a_s_6831b73.mp3"
+  },
+  "they become water vapour and go up and become the clouds in the sky.": {
+   "n": "a_n_02d64cc.mp3",
+   "s": "a_s_02d64cc.mp3"
+  },
+  "when it is hot, water becomes water vapour.": {
+   "n": "a_n_a2381b5.mp3",
+   "s": "a_s_a2381b5.mp3"
+  },
+  "when it is cold, water vapour becomes water.": {
+   "n": "a_n_6c71272.mp3",
+   "s": "a_s_6c71272.mp3"
+  },
+  "when it is very cold, water becomes ice.": {
+   "n": "a_n_0f62587.mp3",
+   "s": "a_s_0f62587.mp3"
+  },
+  "we see water everywhere.": {
+   "n": "a_n_9859fcd.mp3",
+   "s": "a_s_9859fcd.mp3"
+  },
+  "when mum and dad are busy, i'm ready to help!": {
+   "n": "a_n_b0cf976.mp3",
+   "s": "a_s_b0cf976.mp3"
+  },
+  "you're welcome.": {
+   "n": "a_n_14e573a.mp3",
+   "s": "a_s_14e573a.mp3"
+  },
+  "excuse me, where is shanghai no.1 school?": {
+   "n": "a_n_00dba22.mp3",
+   "s": "a_s_00dba22.mp3"
+  },
+  "oh, it's just over there.": {
+   "n": "a_n_6514c75.mp3",
+   "s": "a_s_6514c75.mp3"
+  },
+  "i give my old clothes to people in need.": {
+   "n": "a_n_4140cc7.mp3",
+   "s": "a_s_4140cc7.mp3"
+  },
+  "she drops a leaf into the river.": {
+   "n": "a_n_98ec597.mp3",
+   "s": "a_s_98ec597.mp3"
+  },
+  "the ant sees that and bites the fox.": {
+   "n": "a_n_4a0b404.mp3",
+   "s": "a_s_4a0b404.mp3"
+  },
+  "this time, the ant helps the bird.": {
+   "n": "a_n_d8b8f1a.mp3",
+   "s": "a_s_d8b8f1a.mp3"
   }
  }
 }

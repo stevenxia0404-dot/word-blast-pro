@@ -581,13 +581,11 @@ export function parseWordText(text: string) {
  * 示例行覆盖四种形态：单词+例句 / 单词无例句 / 短语 / 完整句子。
  */
 export function generateCsvTemplate(): string {
+  // 只留 1 行真实示例（用 3A 教材的词），家长照着填就行，
+  // 不会因为模板里塞了假示例而误导入。
   return (
     '序号,英文单词,短语例句,中文翻译\n' +
-    '1,apple,I eat an apple every day.,苹果\n' +
-    '2,cat,The cat is cute.,猫\n' +
-    '3,dog,,狗\n' +
-    '4,feed the cows,,喂奶牛\n' +
-    '5,My mum is a great cook.,,我的妈妈是一位超棒的厨师\n'
+    '1,new,A new start.,新的开始。\n'
   )
 }
 

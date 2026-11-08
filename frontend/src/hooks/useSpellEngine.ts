@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import type { VocabItem, SubsectionType } from '../config/gameConfig'
+import type { VocabItem, SubsectionType, SentenceBlank } from '../config/gameConfig'
 import { getExampleSentence } from '../config/gameConfig'
 
 export interface SlotState {
@@ -59,6 +59,8 @@ export function useSpellEngine() {
     mode: SubsectionType,
     allVocab: VocabItem[],
     helpLevel: number,
+    /** 「换个空」小节轮换用：同一关第 N 小节挖 blanks 里的第 N 个位置 */
+    blankRound = 0,
   ) => {
     const en = item.en.toLowerCase()
     let answerTokens: string[] = []
@@ -81,29 +83,45 @@ export function useSpellEngine() {
       }
     } else if (mode === 'cloze') {
       const words = en.split(' ')
-      const allWords = allVocab.flatMap(v => v.en.toLowerCase().split(' '))
-      let useSentence = false
-      if (words.length === 1) {
-        // 单词条目：用例句挖空（占位句或正式例句），答案仍是原词
-        const sentence = getExampleSentence(item)
-        const targetRe = new RegExp(`\\b${en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
-        if (targetRe.test(sentence)) {
-          blankWord = words[0]
-          answerTokens = [blankWord]
-          displaySentence = sentence.replace(targetRe, '___')
-          useSentence = true
+      // 干扰项从「词汇」取（不是从句子分词）——句子分词会混入 the/is 这类虚词
+      const allWords = allVocab
+        .filter(v => (v.type ?? 'word') === 'word')
+        .flatMap(v => v.en.toLowerCase().split(' '))
+
+      // ① 教材句子：用预计算的挖空位置（答案取句中原词，如 tomatoes）
+      const blanks = (item as { blanks?: SentenceBlank[] }).blanks
+      if (blanks && blanks.length > 0) {
+        // 「换个空」小节轮换：同一关两小节挖不同的位置
+        const idx = blankRound % blanks.length
+        const b = blanks[idx]
+        blankWord = b.answer
+        answerTokens = [b.answer]
+        displaySentence = b.display
+      } else {
+        // ② 无预计算挖空（短语 / 无候选的句子）→ 挖词条自身
+        let useSentence = false
+        if (words.length === 1) {
+          // 有正式例句时用例句挖空（单词条目）
+          const sentence = getExampleSentence(item)
+          if (sentence) {
+            const targetRe = new RegExp(`\\b${en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
+            if (targetRe.test(sentence)) {
+              blankWord = words[0]
+              answerTokens = [blankWord]
+              displaySentence = sentence.replace(targetRe, '___')
+              useSentence = true
+            }
+          }
         }
-        // 例句里找不到目标词（数据异常）：走下方词条挖空兜底
-      }
-      if (!useSentence) {
-        // 短语/句子：词条自身挖一个词（原有逻辑）
-        const blankIdx = words.length > 1 ? Math.floor(Math.random() * words.length) : 0
-        blankWord = words[blankIdx]
-        answerTokens = [blankWord]
-        const pre = words.slice(0, blankIdx).join(' ')
-        const post = words.slice(blankIdx + 1).join(' ')
-        displaySentence = `${pre} ___ ${post}`.trim()
-        if (words.length === 1) displaySentence = '___'
+        if (!useSentence) {
+          const blankIdx = words.length > 1 ? Math.floor(Math.random() * words.length) : 0
+          blankWord = words[blankIdx]
+          answerTokens = [blankWord]
+          const pre = words.slice(0, blankIdx).join(' ')
+          const post = words.slice(blankIdx + 1).join(' ')
+          displaySentence = `${pre} ___ ${post}`.trim()
+          if (words.length === 1) displaySentence = '___'
+        }
       }
       const distractors = randomDistractorWords(3, [blankWord.toLowerCase()], allWords)
       candidates = [blankWord, ...distractors].sort(() => Math.random() - 0.5)

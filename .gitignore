@@ -11,3 +11,6 @@ tests/_l1_test.js
 tests/_l2_test.js
 tests/_parser_v3.js
 tests/_cloze_test.js
+
+# 3A 词库构建产物
+tools/_gameconfig.cjs

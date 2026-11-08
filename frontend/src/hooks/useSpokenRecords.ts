@@ -71,7 +71,10 @@ export function markSpoken(en: string): boolean {
  * 记录一次跟读并结算分数。
  * per-word 记录与累计分在同一个同步函数里写，避免「记录成功但分数没加」。
  */
-export function recordSpoken(en: string): { isFirst: boolean; points: number; total: number } {
+export function recordSpoken(
+  en: string,
+  isSentence = false,
+): { isFirst: boolean; points: number; total: number } {
   const key = en.trim().toLowerCase()
   const records = loadSpoken()
   const isFirst = !records[key]
@@ -83,7 +86,10 @@ export function recordSpoken(en: string): { isFirst: boolean; points: number; to
     } catch { /* quota exceeded */ }
   }
 
-  const points = isFirst ? SCORE.repeatFirst : SCORE.repeatReview
+  // 句子跟读分值更高（整句开口比单词难）
+  const points = isSentence
+    ? (isFirst ? SCORE.repeatSentenceFirst : SCORE.repeatSentenceReview)
+    : (isFirst ? SCORE.repeatFirst : SCORE.repeatReview)
   const cur = loadSpokenScore()
   const next: SpokenScore = {
     score: cur.score + points,

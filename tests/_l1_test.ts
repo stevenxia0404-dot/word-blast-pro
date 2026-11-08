@@ -1,6 +1,6 @@
 // L1 迁移与配置层业务测试（临时验证脚本）
 import { migrateSave, mergeLevelResults } from '../frontend/src/config/saveSchema'
-import { getTitle, getSubsections, resolveSubsections, LEVELS, VOCABULARY } from '../frontend/src/config/gameConfig'
+import { getTitle, getSubsections, resolveSubsections, LEVELS, VOCABULARY, SENTENCES, ALL_ITEMS } from '../frontend/src/config/gameConfig'
 
 let fail = 0
 const ok = (cond: boolean, label: string, extra = '') => {
@@ -54,22 +54,27 @@ ok(getTitle(3000, 2000).name === '单词大王', '两分之和判定')
 ok(getTitle(0).name === '英语小芽', '默认第一档')
 
 // ---- 6. 内建 12 关：resolveSubsections 必须与 getSubsections 完全一致 ----
+// 注意：必须传 ALL_ITEMS（含句子）——句子 id 在 1000+ 空间，只传 VOCABULARY 找不到句子
 for (const lv of LEVELS) {
   const a = JSON.stringify(getSubsections(lv.id))
-  const b = JSON.stringify(resolveSubsections(lv, VOCABULARY))
+  const b = JSON.stringify(resolveSubsections(lv, ALL_ITEMS))
   ok(a === b, `L${lv.id} 玩法一致`, `${a} vs ${b}`)
 }
 
 // ---- 7. 自定义关卡（id>13）按内容判定 ----
-const fakeLevel = { id: 20, name: 'x', cols: 2, rows: 2, wordIds: [1, 2, 3] }
-const wordLv = resolveSubsections(fakeLevel, VOCABULARY)
+// id 动态取，词库换了测试也不会失效
+const firstWord = VOCABULARY.find(v => v.type === 'word')!.id
+const firstPhrase = VOCABULARY.find(v => v.type === 'phrase')!.id
+const firstSentence = SENTENCES[0].id
+const fakeLevel = { id: 20, name: 'x', cols: 2, rows: 2, wordIds: [firstWord, firstWord + 1, firstWord + 2] }
+const wordLv = resolveSubsections(fakeLevel, ALL_ITEMS)
 ok(wordLv[0].type === 'match', '自定义单词关 → 消消乐')
-const phraseLv = resolveSubsections({ ...fakeLevel, wordIds: [103, 104] }, VOCABULARY)
+const phraseLv = resolveSubsections({ ...fakeLevel, wordIds: [firstPhrase, firstPhrase + 1] }, ALL_ITEMS)
 ok(phraseLv[0].type === 'cloze' && phraseLv[1].type === 'wordSelect', '自定义短语关 → 完形家族')
-const sentLv = resolveSubsections({ ...fakeLevel, wordIds: [118, 119] }, VOCABULARY)
-ok(sentLv[1].type === 'wordOrder', '自定义句子关 → 连词成句')
-ok(resolveSubsections(undefined, VOCABULARY).length === 0, 'undefined 关卡 → 空')
-ok(resolveSubsections({ ...fakeLevel, wordIds: [9999] }, VOCABULARY).length === 0, '词条全缺 → 空')
+const sentLv = resolveSubsections({ ...fakeLevel, wordIds: [firstSentence, firstSentence + 1] }, ALL_ITEMS)
+ok(sentLv[0].type === 'cloze' && sentLv.length === 2, '自定义句子关 → 句子挖空')
+ok(resolveSubsections(undefined, ALL_ITEMS).length === 0, 'undefined 关卡 → 空')
+ok(resolveSubsections({ ...fakeLevel, wordIds: [999999] }, ALL_ITEMS).length === 0, '词条全缺 → 空')
 
 console.log(fail === 0 ? 'L1 全部通过 ✅' : `${fail} 项失败 ❌`)
 process.exit(fail ? 1 : 0)

@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { VOCABULARY, LEVELS, SCORE, resolveSubsections, getTitle } from './config/gameConfig'
+import { ALL_ITEMS, LEVELS, SCORE, resolveSubsections, getTitle } from './config/gameConfig'
 import type { VocabItem, SubsectionType } from './config/gameConfig'
 import { useGameEngine } from './hooks/useGameEngine'
 import { useSpellEngine } from './hooks/useSpellEngine'
@@ -54,7 +54,9 @@ function App() {
   const subsectionRef = useRef(prog.subsectionIndex)
   subsectionRef.current = prog.subsectionIndex
 
-  const activeVocab = customVocab ?? VOCABULARY
+  // 内建词库 = 词汇 + 教材句子（句子关要靠它取词）
+  // 自定义词库走 useCustomVocab 的合并结果（不含内置句子）
+  const activeVocab = customVocab ?? ALL_ITEMS
   const activeLevels = customLevels?.length ? customLevels : LEVELS
   const level = prog.currentLevel
   const subsections = resolveSubsections(level, activeVocab)
@@ -176,7 +178,7 @@ function App() {
     if (wordQueue.length === 0) return
     if (currentWordIdx >= wordQueue.length) return
     const item = wordQueue[currentWordIdx]
-    initSpell(item, subsectionType, activeVocab, prog.help.helpLevel)
+    initSpell(item, subsectionType, activeVocab, prog.help.helpLevel, prog.subsectionIndex)
     setShowHelpBtn(false)
     setSpellResult(null)
   }, [currentWordIdx, wordQueue, subsectionType])

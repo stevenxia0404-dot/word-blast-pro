@@ -45,6 +45,8 @@ const MIC_TIMEOUT_MS = 10_000
 const STOP_FALLBACK_MS = 1_500
 /** 单次录音上限（儿童场景：防录一堆环境音） */
 export const MAX_REC_SECONDS = 10
+/** 句子跟读的上限：整句朗读更慢，给更多时间 */
+export const MAX_REC_SECONDS_SENTENCE = 20
 
 export function useRecorder(onError?: (msg: string) => void) {
   const [recState, setRecState] = useState<RecState>('idle')
@@ -95,8 +97,9 @@ export function useRecorder(onError?: (msg: string) => void) {
     setRecState('idle')
   }, [clearTimers, releaseMic, revokeUrl])
 
-  /** 开始录音。返回 true = 已在录（UI 转为「再点结束」态） */
-  const start = useCallback(async (): Promise<boolean> => {
+  /** 开始录音。返回 true = 已在录（UI 转为「再点结束」态）
+   *  maxSeconds：本次录音上限（句子用 20s，单词用 10s） */
+  const start = useCallback(async (maxSeconds: number = MAX_REC_SECONDS): Promise<boolean> => {
     if (startingRef.current) return false
     if (!window.MediaRecorder) {
       onError?.('此浏览器不支持录音，建议用 Safari 或 Chrome 打开')
@@ -152,7 +155,7 @@ export function useRecorder(onError?: (msg: string) => void) {
       // 最长录制限时自动停
       maxTimerRef.current = setTimeout(() => {
         if (mediaRef.current?.state === 'recording') stop()
-      }, MAX_REC_SECONDS * 1000)
+      }, maxSeconds * 1000)
 
       setRecState('recording')
       return true

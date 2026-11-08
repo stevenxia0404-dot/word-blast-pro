@@ -1,3 +1,6 @@
+import { VOCAB_3A_WORDS, VOCAB_3A_SENTENCES } from './vocab3a'
+import type { Vocab3aWord, Vocab3aSentence } from './vocab3a'
+
 export type VocabType = 'word' | 'phrase' | 'sentence'
 
 export interface VocabItem {
@@ -10,6 +13,20 @@ export interface VocabItem {
   sentence?: string
   /** 用户在导入表格里填的序号，用于核对条数、查漏。旧存档缺省 */
   seq?: number
+}
+
+/** 句子的一个可挖空位置：答案取句中原词（tomatoes 而非 tomato） */
+export interface SentenceBlank {
+  /** 句中被挖掉的词（保留原大小写） */
+  token: string
+  /** 正确答案 = token */
+  answer: string
+  /** 对应到词库里的词条（可能是复数/动名词形态的原形） */
+  wordEn: string
+  /** 该词条的中文 */
+  zh: string
+  /** 挖空后的整句（___ 位置已就位） */
+  display: string
 }
 
 /** 词条分类：句末标点 → 句子；含空格 → 短语；其余 → 单词（解析层共用） */
@@ -33,165 +50,70 @@ export interface TitleDef {
   minScore: number
 }
 
-/* ── 词库 125 条 ── */
+/* ── 词库：3A 教材 Unit 1-5（自动生成，见 vocab3a.ts） ── */
 
-export const VOCABULARY: VocabItem[] = [
-  // #1-10  Level 1  日常动作与动物
-  { id: 1, en: 'robot', zh: '机器人' },
-  { id: 2, en: 'music', zh: '音乐' },
-  { id: 3, en: 'talk', zh: '谈话/聊天' },
-  { id: 4, en: 'sing', zh: '唱歌' },
-  { id: 5, en: 'dance', zh: '跳舞' },
-  { id: 6, en: 'he', zh: '他' },
-  { id: 7, en: 'go', zh: '去/走' },
-  { id: 8, en: 'lion', zh: '狮子' },
-  { id: 9, en: 'mouse', zh: '老鼠' },
-  { id: 10, en: 'share', zh: '分享' },
-  // #11-20  Level 2  人物与自然
-  { id: 11, en: 'mother', zh: '妈妈' },
-  { id: 12, en: 'mum', zh: '妈妈' },
-  { id: 13, en: 'nice', zh: '令人愉快的/美好的' },
-  { id: 14, en: 'cook', zh: '厨师/烹饪' },
-  { id: 15, en: 'great', zh: '超棒的' },
-  { id: 16, en: 'teacher', zh: '老师' },
-  { id: 17, en: 'good', zh: '好的' },
-  { id: 18, en: 'super', zh: '超级棒的' },
-  { id: 19, en: 'plant', zh: '植物/种植' },
-  { id: 20, en: 'tree', zh: '树' },
-  // #21-30  Level 3  植物与自然
-  { id: 21, en: 'root', zh: '根' },
-  { id: 22, en: 'roots', zh: '根（复数）' },
-  { id: 23, en: 'trunk', zh: '树干' },
-  { id: 24, en: 'branch', zh: '树枝' },
-  { id: 25, en: 'branches', zh: '树枝（复数）' },
-  { id: 26, en: 'leaf', zh: '树叶' },
-  { id: 27, en: 'leaves', zh: '树叶（复数）' },
-  { id: 28, en: 'flower', zh: '花' },
-  { id: 29, en: 'grass', zh: '草地' },
-  { id: 30, en: 'pond', zh: '水池' },
-  // #31-40  Level 4  水世界与场所
-  { id: 31, en: 'lake', zh: '湖' },
-  { id: 32, en: 'river', zh: '河' },
-  { id: 33, en: 'sea', zh: '海' },
-  { id: 34, en: 'duck', zh: '鸭子' },
-  { id: 35, en: 'frog', zh: '青蛙' },
-  { id: 36, en: 'fish', zh: '鱼' },
-  { id: 37, en: 'shark', zh: '鲨鱼' },
-  { id: 38, en: 'canteen', zh: '餐厅' },
-  { id: 39, en: 'toilet', zh: '厕所/洗手间' },
-  { id: 40, en: 'classroom', zh: '教室' },
-  // #41-50  Level 5  状态与情感
-  { id: 41, en: 'dirty', zh: '脏的' },
-  { id: 42, en: 'clean', zh: '干净的' },
-  { id: 43, en: 'use', zh: '使用' },
-  { id: 44, en: 'dish', zh: '盘子' },
-  { id: 45, en: 'dishes', zh: '盘子（复数）' },
-  { id: 46, en: 'happy', zh: '高兴的' },
-  { id: 47, en: 'excited', zh: '激动地/兴奋的' },
-  { id: 48, en: 'upset', zh: '难过的/沮丧的' },
-  { id: 49, en: 'angry', zh: '生气的' },
-  { id: 50, en: 'face', zh: '脸' },
-  // #51-60  Level 6  动作与家庭
-  { id: 51, en: 'eating', zh: '吃饭/吃（动名词形式）' },
-  { id: 52, en: 'using', zh: '使用（动名词形式）' },
-  { id: 53, en: 'feed', zh: '喂养/喂食' },
-  { id: 54, en: 'cow', zh: '奶牛' },
-  { id: 55, en: 'cows', zh: '奶牛（复数）' },
-  { id: 56, en: 'see', zh: '看见' },
-  { id: 57, en: 'film', zh: '电影' },
-  { id: 58, en: 'visit', zh: '看望/参观' },
-  { id: 59, en: 'grandma', zh: '奶奶/外婆' },
-  { id: 60, en: 'grandpa', zh: '爷爷/外公' },
-  // #61-70  Level 7  日常家务
-  { id: 61, en: 'and', zh: '和' },
-  { id: 62, en: 'time', zh: '时间/时光' },
-  { id: 63, en: 'do', zh: '做' },
-  { id: 64, en: 'housework', zh: '家务' },
-  { id: 65, en: 'tidy', zh: '整理' },
-  { id: 66, en: 'room', zh: '房间' },
-  { id: 67, en: 'make', zh: '铺（床）/制作' },
-  { id: 68, en: 'bed', zh: '床' },
-  { id: 69, en: 'clap', zh: '拍打' },
-  { id: 70, en: 'hands', zh: '手（复数）' },
-  // #71-80  Level 8  运动与时间
-  { id: 71, en: 'play', zh: '玩/玩耍' },
-  { id: 72, en: 'game', zh: '游戏' },
-  { id: 73, en: 'have', zh: '有/进行' },
-  { id: 74, en: 'sports', zh: '体育的/运动的' },
-  { id: 75, en: 'field', zh: '场地/田野' },
-  { id: 76, en: 'wash', zh: '洗' },
-  { id: 77, en: 'my', zh: '我的' },
-  { id: 78, en: 'I', zh: '我' },
-  { id: 79, en: 'after', zh: '在...之后' },
-  { id: 80, en: 'before', zh: '在...之前' },
-  // #81-90  Level 9  基础词汇
-  { id: 81, en: 'eat', zh: '吃' },
-  { id: 82, en: 'the', zh: '这/这些（定冠词）' },
-  { id: 83, en: 'are', zh: '是（复数/第二人称）' },
-  { id: 84, en: 'green', zh: '绿色的' },
-  { id: 85, en: 'it', zh: '它' },
-  { id: 86, en: 'has', zh: '有（第三人称单数）' },
-  { id: 87, en: 'a', zh: '一个（不定冠词）' },
-  { id: 88, en: 'yellow', zh: '黄色的' },
-  { id: 89, en: 'by', zh: '在...旁边' },
-  { id: 90, en: 'is', zh: '是（单数）' },
-  // #91-102  Level 10  日常生活
-  { id: 91, en: 'drink', zh: '喝' },
-  { id: 92, en: 'some', zh: '一些' },
-  { id: 93, en: 'milk', zh: '牛奶' },
-  { id: 94, en: 'read', zh: '读' },
-  { id: 95, en: 'story', zh: '故事' },
-  { id: 96, en: 'say', zh: '说' },
-  { id: 97, en: 'night', zh: '夜晚/晚' },
-  { id: 98, en: 'sleep', zh: '睡觉' },
-  { id: 99, en: "It's", zh: '它是' },
-  { id: 100, en: 'for', zh: '为/给/对于' },
-  { id: 101, en: 'pack', zh: '整理/收拾' },
-  { id: 102, en: 'schoolbag', zh: '书包' },
-  // #103-117  短语 (Level 11-12)
-  { id: 103, en: 'feed the cows', zh: '喂奶牛' },
-  { id: 104, en: 'see a film', zh: '看电影' },
-  { id: 105, en: 'visit Grandma and Grandpa', zh: '看望爷爷奶奶' },
-  { id: 106, en: 'have a good time', zh: '过得愉快' },
-  { id: 107, en: 'do the housework', zh: '做家务' },
-  { id: 108, en: 'tidy my room', zh: '整理我的房间' },
-  { id: 109, en: 'make the bed', zh: '铺床' },
-  { id: 110, en: 'clap hands', zh: '拍手' },
-  { id: 111, en: 'play a game', zh: '玩游戏' },
-  { id: 112, en: 'have a go', zh: '试一试' },
-  { id: 113, en: 'sports field', zh: '运动场' },
-  { id: 114, en: 'wash my hands', zh: '洗手' },
-  { id: 115, en: 'drink some milk', zh: '喝牛奶' },
-  { id: 116, en: 'read a story', zh: '读故事' },
-  { id: 117, en: 'say good night', zh: '说晚安' },
-  // #118-125  句子 (Level 13)
-  { id: 118, en: 'My mum is a great cook.', zh: '我的妈妈是一位超棒的厨师。' },
-  { id: 119, en: 'I wash my hands after using the toilet.', zh: '我在上完厕所后洗手。' },
-  { id: 120, en: 'I wash my hands before eating.', zh: '我在吃饭前洗手。' },
-  { id: 121, en: 'The leaves are green.', zh: '这些叶子是绿色的。' },
-  { id: 122, en: 'It has a yellow flower.', zh: '它有一朵黄色的花。' },
-  { id: 123, en: 'I see a frog by the lake.', zh: '我在湖边看到一只青蛙。' },
-  { id: 124, en: "It's time for bed.", zh: '睡觉时间到了。' },
-  { id: 125, en: 'I pack my schoolbag.', zh: '我整理书包。' },
-].map(v => ({ ...v, type: classifyVocab(v.en) }))
 
-/* ── 关卡定义（12 关：单词 1-10 + 运用关 11-12）── */
-/* 消消乐 / 字母拼写只放单词；短语、句子全部归完形家族（运用关） */
+/** 词汇（单词 + 短语）：66 条 */
+export const VOCABULARY: Vocab3aWord[] = VOCAB_3A_WORDS
 
-export const LEVELS: LevelConfig[] = [
-  { id: 1, name: '日常动作与动物', cols: 3, rows: 4, wordIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
-  { id: 2, name: '人物与自然', cols: 3, rows: 4, wordIds: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-  { id: 3, name: '植物与自然', cols: 3, rows: 4, wordIds: [21, 22, 23, 24, 25, 26, 27, 28, 29, 30] },
-  { id: 4, name: '水世界与场所', cols: 3, rows: 4, wordIds: [31, 32, 33, 34, 35, 36, 37, 38, 39, 40] },
-  { id: 5, name: '状态与情感', cols: 3, rows: 4, wordIds: [41, 42, 43, 44, 45, 46, 47, 48, 49, 50] },
-  { id: 6, name: '动作与家庭', cols: 3, rows: 4, wordIds: [51, 52, 53, 54, 55, 56, 57, 58, 59, 60] },
-  { id: 7, name: '日常家务', cols: 3, rows: 4, wordIds: [61, 62, 63, 64, 65, 66, 67, 68, 69, 70] },
-  { id: 8, name: '运动与时间', cols: 3, rows: 4, wordIds: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80] },
-  { id: 9, name: '基础词汇', cols: 3, rows: 4, wordIds: [81, 82, 83, 84, 85, 86, 87, 88, 89, 90] },
-  { id: 10, name: '日常生活', cols: 3, rows: 4, wordIds: [91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102] },
-  { id: 11, name: '短语运用', cols: 2, rows: 3, wordIds: [103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117] },
-  { id: 12, name: '句子运用', cols: 2, rows: 2, wordIds: [118, 119, 120, 121, 122, 123, 124, 125] },
-]
+/** 教材句子：50 条，带预计算的挖空位置 */
+export const SENTENCES: Vocab3aSentence[] = VOCAB_3A_SENTENCES
+
+/** 全部词条（词汇 + 句子）：跟读模块、音频生成都用它 */
+export const ALL_ITEMS: (Vocab3aWord | Vocab3aSentence)[] = [...VOCABULARY, ...SENTENCES]
+
+/* ── 关卡编排（12 关） ──
+ * 单词关 ×5（50 词，每关 10）→ 消消乐 + 字母拼写
+ * 短语关 ×2（16 短语，每关 8）→ 短语完形 + 选词拼短语
+ * 句子关 ×5（50 句，每关 10）→ 句子挖空 + 换一批挖
+ *
+ * 关卡名暂用单元名（Unit 1-5）+ 类型。将来讨论单元编排时，
+ * 只需改这里，不用重新导入资料（词库已保留 unit 字段）。
+ */
+const WORD_LEVELS = 5
+const PHRASE_LEVELS = 2
+const SENTENCE_LEVELS = 5
+const PER_WORD_LEVEL = 10
+const PER_PHRASE_LEVEL = 8
+const PER_SENTENCE_LEVEL = 10
+
+export const LEVELS: LevelConfig[] = (() => {
+  const out: LevelConfig[] = []
+  const words = VOCABULARY.filter(w => w.type === 'word')
+  const phrases = VOCABULARY.filter(w => w.type === 'phrase')
+
+  for (let i = 0; i < WORD_LEVELS; i++) {
+    const chunk = words.slice(i * PER_WORD_LEVEL, (i + 1) * PER_WORD_LEVEL)
+    if (chunk.length === 0) break
+    out.push({
+      id: out.length + 1,
+      name: `单词 ${i + 1}`,
+      cols: 3, rows: 4,
+      wordIds: chunk.map(w => w.id),
+    })
+  }
+  for (let i = 0; i < PHRASE_LEVELS; i++) {
+    const chunk = phrases.slice(i * PER_PHRASE_LEVEL, (i + 1) * PER_PHRASE_LEVEL)
+    if (chunk.length === 0) break
+    out.push({
+      id: out.length + 1,
+      name: `短语 ${i + 1}`,
+      cols: 2, rows: 4,
+      wordIds: chunk.map(w => w.id),
+    })
+  }
+  for (let i = 0; i < SENTENCE_LEVELS; i++) {
+    const chunk = SENTENCES.slice(i * PER_SENTENCE_LEVEL, (i + 1) * PER_SENTENCE_LEVEL)
+    if (chunk.length === 0) break
+    out.push({
+      id: out.length + 1,
+      name: `句子 ${i + 1}`,
+      cols: 2, rows: 5,
+      wordIds: chunk.map(s => s.id),   // 句子 id 已是 1000+ 空间
+    })
+  }
+  return out
+})()
 
 /* ── 小节类型 ── */
 
@@ -203,24 +125,26 @@ export interface SubsectionDef {
 }
 
 export function getSubsections(levelId: number): SubsectionDef[] {
-  if (levelId <= 10) {
+  // 单词关（1-5）：消消乐 + 字母拼写
+  // 词汇没有配对例句 → 不再有「例句填空」（曾用占位句 I can see a __. 撑场）
+  if (levelId <= 5) {
     return [
       { type: 'match', label: '配对消消' },
       { type: 'spell', label: '字母拼写' },
-      { type: 'cloze', label: '例句填空' },
     ]
   }
-  if (levelId === 11) {
+  // 短语关（6-7）
+  if (levelId <= 7) {
     return [
       { type: 'cloze', label: '短语填空' },
       { type: 'wordSelect', label: '选词拼短语' },
       { type: 'cloze', label: '短语填空 · 换个空' },
     ]
   }
+  // 句子关（8-12）：教材原句挖空
   return [
     { type: 'cloze', label: '句子填空' },
-    { type: 'wordOrder', label: '连词成句' },
-    { type: 'cloze', label: '混合填空' },
+    { type: 'cloze', label: '句子填空 · 换个空' },
   ]
 }
 
@@ -238,14 +162,12 @@ export function resolveSubsections(level: LevelConfig | undefined, vocab: VocabI
     return [
       { type: 'match', label: '配对消消' },
       { type: 'spell', label: '字母拼写' },
-      { type: 'cloze', label: '例句填空' },
     ]
   }
   if (types.includes('sentence')) {
     return [
       { type: 'cloze', label: '句子填空' },
-      { type: 'wordOrder', label: '连词成句' },
-      { type: 'cloze', label: '混合填空' },
+      { type: 'cloze', label: '句子填空 · 换个空' },
     ]
   }
   return [
@@ -255,24 +177,15 @@ export function resolveSubsections(level: LevelConfig | undefined, vocab: VocabI
   ]
 }
 
-/* ── 例句：正式例句由内容资料提供，占位句供开发期测试 ── */
-
-const SENTENCE_TEMPLATES = [
-  'I can see a {w}.',
-  'This is a {w}.',
-  'I like the {w}.',
-  'Look at the {w}!',
-  'The {w} is very nice.',
-  'Can you say {w}?',
-]
-
-/** 取词条例句：有正式例句用正式的；单词缺省套占位模板；短语/句子用自身 */
+/* ── 例句 ──
+ * 3A 教材里句子是独立词条（50 条），词汇没有配对例句 —— 不再造假占位句。
+ * 无例句时返回空串，调用方据此走「挖词条自身」兜底。
+ */
 export function getExampleSentence(item: VocabItem): string {
   if (item.sentence) return item.sentence
   const type = item.type ?? classifyVocab(item.en)
   if (type !== 'word') return item.en
-  const tpl = SENTENCE_TEMPLATES[item.id % SENTENCE_TEMPLATES.length]
-  return tpl.replace('{w}', item.en)
+  return ''
 }
 
 /* ── 颜色主题 ── */
@@ -301,6 +214,9 @@ export const SCORE = {
   /* 跟读练习：首次「我会了」全额、复习小额；慢速不扣分（需要慢速是学习过程） */
   repeatFirst: 60,
   repeatReview: 10,
+  /* 句子跟读分值更高：整句开口比单词难（Steven 拍板） */
+  repeatSentenceFirst: 100,
+  repeatSentenceReview: 15,
 }
 
 /* ── 称号 ── */

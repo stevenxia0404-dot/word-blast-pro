@@ -14,6 +14,8 @@ import { useRecorder, isRestrictedWebView } from '../hooks/useRecorder'
 import { recordSpoken, loadSpoken } from '../hooks/useSpokenRecords'
 
 const SESSION_SIZE = 10
+/** 一组里句子的数量：整句开口更累，句子占少数（其余是单词） */
+const SESSION_SENTENCES = 2
 
 interface Props {
   vocab: VocabItem[]
@@ -29,14 +31,30 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-/** 一组跟读词条：优先没跟读过的，不足补复习的 */
+/**
+ * 一组跟读词条：优先没跟读过的，不足补复习的。
+ * 单词与句子分开挑再混排 —— 避免整组全是长句（累）或全是单词（太简单）。
+ */
 function buildQueue(vocab: VocabItem[], size = SESSION_SIZE): VocabItem[] {
   const spoken = loadSpoken()
-  const fresh = shuffle(vocab.filter(v => !spoken[v.en.trim().toLowerCase()]))
-  const review = shuffle(vocab.filter(v => spoken[v.en.trim().toLowerCase()]))
-  const picked = fresh.slice(0, size)
-  if (picked.length < size) picked.push(...review.slice(0, size - picked.length))
-  return picked
+  const isSpoken = (v: VocabItem) => Boolean(spoken[v.en.trim().toLowerCase()])
+  const isSentence = (v: VocabItem) => (v.type ?? 'word') === 'sentence'
+
+  const pick = (pool: VocabItem[], n: number): VocabItem[] => {
+    const fresh = shuffle(pool.filter(v => !isSpoken(v)))
+    const review = shuffle(pool.filter(v => isSpoken(v)))
+    const out = fresh.slice(0, n)
+    if (out.length < n) out.push(...review.slice(0, n - out.length))
+    return out
+  }
+
+  const wordPool = vocab.filter(v => !isSentence(v))
+  const sentPool = vocab.filter(isSentence)
+  const sentCount = Math.min(SESSION_SENTENCES, Math.floor(size / 4), sentPool.length)
+  const wordCount = size - sentCount
+
+  const picked = [...pick(wordPool, wordCount), ...pick(sentPool, sentCount)]
+  return shuffle(picked)
 }
 
 export function RepeatModule({ vocab, onExit }: Props) {
@@ -52,6 +70,7 @@ export function RepeatModule({ vocab, onExit }: Props) {
 
   const item = queue[idx]
   const sentence = item ? getExampleSentence(item) : ''
+  const isSentence = (item?.type ?? 'word') === 'sentence'
 
   /* 进入词条：停掉残留声音，300ms 后自动播标准音 */
   useEffect(() => {
@@ -93,7 +112,8 @@ export function RepeatModule({ vocab, onExit }: Props) {
     unlockAudio()
     setPlaying(null)
     stopNeural()
-    await start()
+    // 句子朗读更慢 → 给更长录音上限
+    await start((item?.type ?? 'word') === 'sentence' ? 20 : 10)
   }, [recState, start, stop])
 
   const handleRetry = useCallback(() => {
@@ -103,7 +123,7 @@ export function RepeatModule({ vocab, onExit }: Props) {
   const handleMastered = useCallback(() => {
     if (!item) return
     // 口语分独立记账：一次同步写入「首次记录 + 累计分」，不会因进闯关被清零
-    const { isFirst, points } = recordSpoken(item.en)
+    const { isFirst, points } = recordSpoken(item.en, isSentence)
     setSession(s => ({
       first: s.first + (isFirst ? 1 : 0),
       review: s.review + (isFirst ? 0 : 1),
@@ -201,13 +221,26 @@ export function RepeatModule({ vocab, onExit }: Props) {
         </div>
       )}
 
-      {/* 大词卡 */}
+      {/* 大词卡：句子更长 → 字号自适应，避免撑破卡片 */}
       <div className="w-full bg-white rounded-[2rem] p-5 sm:p-7 shadow-[0_24px_48px_rgba(132,204,22,0.15)] border-4 border-white text-center">
-        <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-800 bubbly-font tracking-wide break-words leading-tight">
+        {isSentence && (
+          <span className="inline-block mb-2 text-[10px] font-bold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
+            整句跟读
+          </span>
+        )}
+        <div className={
+          isSentence
+            ? 'text-xl sm:text-2xl md:text-3xl font-bold text-blue-800 bubbly-font tracking-wide break-words leading-snug'
+            : 'text-3xl sm:text-4xl md:text-5xl font-bold text-blue-800 bubbly-font tracking-wide break-words leading-tight'
+        }>
           {item.en}
         </div>
-        <div className="text-xl sm:text-2xl text-orange-700 font-semibold mt-2">{item.zh}</div>
-        {item.type !== 'phrase' && item.type !== 'sentence' && (
+        <div className={
+          isSentence
+            ? 'text-base sm:text-lg text-orange-700 font-semibold mt-2 leading-relaxed'
+            : 'text-xl sm:text-2xl text-orange-700 font-semibold mt-2'
+        }>{item.zh}</div>
+        {!isSentence && item.type !== 'phrase' && sentence && (
           <div className="text-sm sm:text-base text-gray-400 mt-3 italic">“{sentence}”</div>
         )}
       </div>
