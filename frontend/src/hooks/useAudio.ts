@@ -1,6 +1,9 @@
 /* useAudio.ts — 语音中枢
- * 两级语音链：预生成神经语音（edge-tts · Ana 童声）→ 系统 SpeechSynthesis 兜底
- * 预生成音频由 tools/gen_audio.py 生成（public/audio/ + manifest.json，key 统一小写）
+ * 两级语音链：预生成神经语音（edge-tts）→ 系统 SpeechSynthesis 兜底
+ * 双音色（Steven 2026-11-07 拍板）：
+ *   Ana  童声 → 消消乐播报 + 跟读示范
+ *   Emma 女声 → 对话模块全程（提问 + 示范回答）
+ * manifest.json = { ana: {...}, emma: {...} }，由 tools/gen_audio.py 生成；key 统一小写
  * 兜底场景：自定义导入词（不在 manifest）、音频加载失败、极旧浏览器
  */
 
@@ -33,9 +36,13 @@ export async function playSoftTone(freq: number, type: OscillatorType = 'sine', 
 
 /* ── 神经语音层：单 audio 元素 + manifest 查询 ── */
 
+export type VoiceId = 'ana' | 'emma'
+type VoiceEntry = { n: string; s: string }
+type Manifest = Record<VoiceId, Record<string, VoiceEntry>>
+
 let audioEl: HTMLAudioElement | null = null
-let neuralManifest: Record<string, { n: string; s: string }> | null = null
-let manifestPromise: Promise<Record<string, { n: string; s: string }> | null> | null = null
+let neuralManifest: Manifest | null = null
+let manifestPromise: Promise<Manifest | null> | null = null
 let currentPlayToken = 0
 
 function getAudioEl(): HTMLAudioElement {
@@ -46,13 +53,14 @@ function getAudioEl(): HTMLAudioElement {
   return audioEl
 }
 
-function loadManifest(): Promise<Record<string, { n: string; s: string }> | null> {
+function loadManifest(): Promise<Manifest | null> {
   if (neuralManifest) return Promise.resolve(neuralManifest)
   if (!manifestPromise) {
     manifestPromise = fetch(`${import.meta.env.BASE_URL}audio/manifest.json`)
       .then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d: { ana?: Record<string, { n: string; s: string }> }) => {
-        neuralManifest = d?.ana ?? {}
+      .then((d: { ana?: Record<string, VoiceEntry>; emma?: Record<string, VoiceEntry> }) => {
+        // 老 manifest 只有 ana：emma 取空对象，对话会自动落到系统 TTS 兜底，不会报错
+        neuralManifest = { ana: d?.ana ?? {}, emma: d?.emma ?? {} }
         return neuralManifest
       })
       .catch(() => {
@@ -81,10 +89,12 @@ export function stopNeural() {
 }
 
 /** 尝试播预生成 mp3。命中并成功启动返回 true；未命中/失败返回 false（调用方走系统 TTS 兜底） */
-async function tryPlayNeural(text: string, slow = false, onEnd?: () => void): Promise<boolean> {
+async function tryPlayNeural(
+  text: string, slow = false, onEnd?: () => void, voice: VoiceId = 'ana',
+): Promise<boolean> {
   const man = await loadManifest()
   if (!man) return false
-  const entry = man[text.toLowerCase()]
+  const entry = man[voice]?.[text.toLowerCase()]
   if (!entry) return false
   const token = ++currentPlayToken
   const el = getAudioEl()
@@ -107,7 +117,7 @@ async function tryPlayNeural(text: string, slow = false, onEnd?: () => void): Pr
   }
 }
 
-/** 播放录音 blob（跟读对比回放）。与播报共用同一元素，天然互斥不重叠 */
+/** 播放录音 blob（对比回放）。与播报共用同一元素，天然互斥不重叠 */
 export function playRecordingUrl(url: string, onEnd?: () => void) {
   const token = ++currentPlayToken
   const el = getAudioEl()
@@ -122,10 +132,18 @@ export function playRecordingUrl(url: string, onEnd?: () => void) {
   el.play().catch(() => { /* 用户手势限制：静默，用户再点一次即可 */ })
 }
 
-/** 神经语音播报（跟读示范音）：预生成优先，未命中/失败回退系统 TTS */
-export async function speakNeural(text: string, opts: { slow?: boolean; onEnd?: () => void } = {}) {
-  const played = await tryPlayNeural(text, opts.slow, opts.onEnd)
+/** 神经语音播报：预生成优先，未命中/失败回退系统 TTS。默认 Ana，可指定 Emma */
+export async function speakNeural(
+  text: string,
+  opts: { slow?: boolean; onEnd?: () => void; voice?: VoiceId } = {},
+) {
+  const played = await tryPlayNeural(text, opts.slow, opts.onEnd, opts.voice ?? 'ana')
   if (!played) speakWord(text)
+}
+
+/** 对话模块专用：Emma 女声（提问 + 示范回答同一人） */
+export function speakDialogue(text: string, opts: { slow?: boolean; onEnd?: () => void } = {}) {
+  return speakNeural(text, { ...opts, voice: 'emma' })
 }
 
 /* ── 系统 SpeechSynthesis（兜底） ── */
@@ -206,9 +224,6 @@ export async function speakWord(wordText: string) {
             utterance.lang = best.lang
           }
         }
-        // If no voice found at all, leave utterance defaults — system will use whatever is available
-        // lang is not set when no voices, so the system voice (e.g. Chinese) will pronounce the English word
-
         window.speechSynthesis.speak(utterance)
       } catch (e) {
         console.warn('SpeechSynthesis speak failed:', e)

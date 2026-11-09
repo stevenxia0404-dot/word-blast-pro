@@ -217,6 +217,9 @@ export const SCORE = {
   /* 句子跟读分值更高：整句开口比单词难（Steven 拍板） */
   repeatSentenceFirst: 100,
   repeatSentenceReview: 15,
+  /* 对话练习：首次「这句我会了」+100、复习 +15（定稿；与跟读共用一个口语分池，但各自独立防刷） */
+  dialogueFirst: 100,
+  dialogueReview: 15,
 }
 
 /* ── 称号 ── */

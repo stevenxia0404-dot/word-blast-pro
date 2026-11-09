@@ -6,11 +6,6 @@ dist/
 Thumbs.db
 .wrangler/
 
-# 回归测试构建产物
-tests/_l1_test.js
-tests/_l2_test.js
-tests/_parser_v3.js
-tests/_cloze_test.js
-
-# 3A 词库构建产物
-tools/_gameconfig.cjs
+# 回归测试 / 构建脚本中间产物（esbuild 从 .ts 生成，勿入库）
+tests/_*.js
+tools/_*.cjs

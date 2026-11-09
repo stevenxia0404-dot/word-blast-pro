@@ -5,7 +5,7 @@ import { useGameEngine } from './hooks/useGameEngine'
 import { useSpellEngine } from './hooks/useSpellEngine'
 import { useGameProgress } from './hooks/useGameProgress'
 import { useCustomVocab } from './hooks/useCustomVocab'
-import { spokenTotal } from './hooks/useSpokenRecords'
+import { spokenTotal, loadModuleProgress } from './hooks/useSpokenRecords'
 import { downloadCsvTemplate } from './config/wordParser'
 import { preloadVoices, unlockAudio, speakWord, stopNeural } from './hooks/useAudio'
 import { HomeScreen } from './components/HomeScreen'
@@ -22,6 +22,7 @@ import { VersionBanner } from './components/VersionBanner'
 import { WordImport } from './components/WordImport'
 import { FeedbackForm } from './components/FeedbackForm'
 import { RepeatModule } from './components/RepeatModule'
+import { DialogueModule } from './components/DialogueModule'
 import Inspector from './components/Inspector'
 
 function App() {
@@ -47,7 +48,7 @@ function App() {
   const [comingSoon, setComingSoon] = useState<'sync' | 'parent' | 'report' | null>(null)
   /* 模块分发：home = 模块首页，blast = 拼写闯关，repeat = 跟读练习
    * 与 prog.phase 解耦：首页恒为第一屏，phase 只描述闯关内部状态 */
-  const [module, setModule] = useState<'home' | 'blast' | 'repeat'>('home')
+  const [module, setModule] = useState<'home' | 'blast' | 'repeat' | 'dialogue' | 'certificate'>('home')
   const subsectionInitedRef = useRef('')
   const matchInitedRef = useRef('')
   const spellInitedRef = useRef('')
@@ -246,6 +247,10 @@ function App() {
   }, [deleteGroup, prog.restartGame])
 
   const totalStars = prog.levelResults.reduce((sum, r) => sum + r.stars, 0)
+  /* 三模块进度：每次 render 重读 localStorage，从练习模块回首页时勋章会即时刷新。
+   * demo 只在 dev 生效（?grand）：强制点亮三枚看金色证书，不写任何存档、不动用户数据。 */
+  const demo = import.meta.env.DEV && new URLSearchParams(window.location.search).has('grand')
+  const progress = loadModuleProgress(prog.phase === 'allComplete', demo)
 
   return (
     <>
@@ -277,8 +282,12 @@ function App() {
           spokenScore={spokenTotal()}
           title={getTitle(prog.totalScore, spokenTotal())}
           hasCustomVocab={hasCustom}
+          progress={progress}
+          demo={demo}
           onStartBlast={startBlast}
           onStartRepeat={() => setModule('repeat')}
+          onStartDialogue={() => setModule('dialogue')}
+          onPreviewCertificate={() => setModule('certificate')}
           onOpenImport={() => setShowWordImport(true)}
           onDownloadTemplate={downloadCsvTemplate}
           onOpenSync={() => setComingSoon('sync')}
@@ -292,6 +301,23 @@ function App() {
         <RepeatModule
           vocab={activeVocab}
           onExit={goHome}
+        />
+      )}
+
+      {/* 对话练习模块（全屏；退出回首页） */}
+      {module === 'dialogue' && (
+        <DialogueModule onExit={goHome} />
+      )}
+
+      {/* dev 演示：金色大满贯证书（生产不渲染，不写任何存档） */}
+      {import.meta.env.DEV && module === 'certificate' && (
+        <Certificate
+          totalScore={prog.totalScore}
+          totalStars={totalStars}
+          spokenScore={spokenTotal()}
+          progress={progress}
+          onRestart={goHome}
+          onHome={goHome}
         />
       )}
 
@@ -358,6 +384,7 @@ function App() {
           totalScore={prog.totalScore}
           totalStars={totalStars}
           spokenScore={spokenTotal()}
+          progress={progress}
           onRestart={handleRestart}
           onHome={goHome}
         />

@@ -28,7 +28,7 @@ const ok = (c, label, extra = '') => {
   const page = await ctx.newPage()
   // 跳过首次启动的版本更新弹窗（它 z-[300] 挡住点击；v3.0 文案在 L5 处理）
   await ctx.addInitScript(() => {
-    try { localStorage.setItem('wordblast_banner_v2', 'v3.1') } catch {}
+    try { localStorage.setItem('wordblast_banner_v2', 'v3.2') } catch {}
   })
   const errors = []
   page.on('pageerror', e => errors.push('pageerror: ' + e.message))
@@ -48,17 +48,18 @@ const ok = (c, label, extra = '') => {
   ok(await page.getByText('闯关练习', { exact: false }).count() > 0, '闯关卡片存在')
   ok(await page.getByText('跟读练习', { exact: false }).count() > 0, '跟读卡片存在')
   ok(await page.getByText('对话练习', { exact: false }).count() > 0, '对话卡片存在')
-  ok(await page.getByText('即将上线').count() > 0, '对话卡带「即将上线」徽标')
+  ok(await page.getByText('一问一答').count() > 0, '对话卡已点亮（不再置灰）')
   ok(await page.getByText('下载模板').count() > 0, '导入行有「下载模板」')
   ok(await page.getByText('导入课本单词').count() > 0, '导入行有「导入课本单词」')
 
-  // 对话卡置灰且点击无效
-  const dlg = page.locator('[aria-disabled="true"]')
-  ok(await dlg.count() > 0, '对话卡 aria-disabled')
-  const before = await page.getByText('闯关练习').count()
-  await dlg.first().click({ force: true }).catch(() => {})
-  await page.waitForTimeout(500)
-  ok(await page.getByText('闯关练习').count() === before, '点对话卡不跳转')
+  // 对话卡已点亮：点击应进入对话模块
+  ok(await page.locator('[aria-disabled="true"]').count() === 0, '首页无置灰模块卡')
+  await page.getByText('对话练习').first().click()
+  await page.waitForTimeout(700)
+  ok(await page.getByText('💬 对话练习').count() > 0, '点对话卡进入对话模块')
+  await page.getByLabel('退出对话').click()
+  await page.waitForTimeout(400)
+  ok(await page.getByText('闯关练习', { exact: false }).count() > 0, '退出对话回到首页')
 
   // ── 2. 进闯关 → 画布渲染（最高回归风险点）──
   console.log('\n[2] 闯关画布不空白')

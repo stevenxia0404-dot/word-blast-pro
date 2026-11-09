@@ -21,7 +21,7 @@ const CONTENT: Record<Props['feature'], { emoji: string; title: string; lead: st
       '不上传孩子的录音：跟读录音只在设备内存里当场回放',
       '没登录也完全能用 —— 同步是增强，不是门槛',
     ],
-    note: '预计随「对话练习」一起上线。',
+    note: '对话练习已上线；同步本体正在单独推进，做完再给你过目。',
   },
   parent: {
     emoji: '👨‍👩‍👧',

@@ -32,7 +32,7 @@ export function GuidePage({ onClose }: Props) {
           <p>· <strong>单词关 ×5</strong>（50 个单词）—— 配对消消 + 字母拼写</p>
           <p>· <strong>短语关 ×2</strong>（16 个短语）—— 短语填空 + 选词拼短语</p>
           <p>· <strong>句子关 ×5</strong>（50 个教材句子）—— 句子填空</p>
-          <p>全部通关后获得 <strong>🏆 毕业证书</strong>，可无限重玩。</p>
+          <p>全部通关后获得 <strong>🏆 毕业证书</strong>；闯关、跟读练习、对话练习三枚勋章全点亮，升级为<strong>金色大满贯证书</strong>，可无限重玩。</p>
           <p className="text-emerald-600">导入自定义词库后，会按词条类型自动生成对应关卡。</p>
         </Section>
 
@@ -98,18 +98,26 @@ export function GuidePage({ onClose }: Props) {
           <p><strong>① 听</strong> — 听标准发音（可切「🐢 慢速」逐词模仿）</p>
           <p><strong>② 读</strong> — 点大麦克风跟读一遍（最长 10 秒自动停）</p>
           <p><strong>③ 比</strong> — 「标准音 ↔ 我的录音」来回对比，自己评「我会了」或「再试一次」</p>
-          <p>首次学会 <strong>+60 分</strong>，复习 <strong>+10 分</strong>，<strong>口语分独立记账</strong>，与闯关分相加决定称号。</p>
+          <p>单词首次学会 <strong>+60 分</strong>、复习 <strong>+10 分</strong>；教材整句首次 <strong>+100 分</strong>、复习 <strong>+15 分</strong>。</p>
+          <p><strong>口语分独立记账</strong>，与闯关分相加决定称号，进闯关不会被清零。</p>
           <p className="text-emerald-700">🔒 录音只在手机内存里当场回放，用完即释放，<strong>不保存、不上传</strong>。</p>
           <p className="text-amber-700">⚠️ 微信/QQ 内置浏览器不支持录音，请用 Safari 或 Chrome 打开。</p>
         </Section>
 
-        <Section emoji="💬" title="对话练习（即将上线）">
-          <p>一问一答的对话模式：应用当提问者，孩子录音回答，再和标准回答对比回放。</p>
-          <p className="text-gray-400">即将上线，首页已有入口敬请期待。</p>
+        <Section emoji="💬" title="对话练习">
+          <p>首页选「💬 对话练习」，一问一答地开口练：</p>
+          <p><strong>① 听</strong> — Emma 女声说出情景里的那句话（可切慢速）</p>
+          <p><strong>② 答</strong> — 看中文情景提示，点麦克风说出你的回答（最长 20 秒）</p>
+          <p><strong>③ 比</strong> — 「Emma 示范 ↔ 我的录音」对比，自己评「我会了」或「再试一次」</p>
+          <p>想不起来可以点「💡 看参考答案」展开教材原句，不影响得分。</p>
+          <p>首次答对 <strong>+100 分</strong>，复习 <strong>+15 分</strong>，与跟读练习共用口语分积分池。</p>
+          <p className="text-emerald-700">📚 8 组情景对话的提问和回答，<strong>全部取自 3A 教材 Unit 1-5 原句</strong>，不编造句子。</p>
+          <p className="text-emerald-700">🔒 录音同样只在内存里当场回放，<strong>不保存、不上传</strong>。</p>
         </Section>
 
         <Section emoji="🔊" title="发音说明">
-          <p>所有单词、句子都用<strong>同一位童声</strong>提前录制好（正常速 + 慢速两版），任何设备播出来都是一样的。</p>
+          <p><strong>童声 Ana</strong>：消消乐播报、跟读练习示范。<strong>女声 Emma</strong>：对话练习全程（提问 + 示范回答都是她）。</p>
+          <p>所有单词、句子都提前录制好（正常速 + 慢速两版），任何设备播出来都是一样的。</p>
           <p className="text-gray-400">自己导入的单词不在录音库里时，会自动改用系统语音朗读。</p>
         </Section>
 
@@ -121,6 +129,7 @@ export function GuidePage({ onClose }: Props) {
         <Section emoji="🌟" title="星级与称号">
           <p>每关结束后按正确率评定 <strong>1-3 星</strong>（≥90% 三星，≥70% 两星）。</p>
           <p className="text-emerald-700">称号按<strong>闯关分 + 口语分</strong>总和判定，口语练习也能挣称号。</p>
+          <p className="text-emerald-700">🏅 闯关 / 跟读练习 / 对话练习各有一枚模块勋章，三枚全亮 → <strong>金色大满贯证书</strong>。</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {[
               { emoji: '🌱', name: '英语小芽', score: '0' },
@@ -143,7 +152,7 @@ export function GuidePage({ onClose }: Props) {
         </Section>
 
         <Section emoji="💾" title="数据存储">
-          <p>学习进度、口语分、跟读记录和词库都保存在<strong>当前设备的浏览器</strong>中，不上传任何服务器。</p>
+          <p>学习进度、口语分、跟读记录、对话记录和词库都保存在<strong>当前设备的浏览器</strong>中，不上传任何服务器。</p>
           <p className="text-gray-500">跨设备同步上线后，也可以在家长区开启同步，让多台设备共享进度。</p>
           <p className="text-amber-700">⚠️ 换用其他手机/平板/iPad，或同一设备换浏览器，都需要重新导入词库。</p>
         </Section>
@@ -172,7 +181,7 @@ export function GuidePage({ onClose }: Props) {
       </div>
 
       <div className="h-8" />
-      <p className="text-center text-white/60 text-xs pb-6">v3.1</p>
+      <p className="text-center text-white/60 text-xs pb-6">v3.2</p>
     </div>
   )
 }

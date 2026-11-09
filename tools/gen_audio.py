@@ -11,7 +11,7 @@
 
 音色（Steven 2026-11-07 试听拍板）：
   - en-US-AnaNeural（童声）：消消乐播报 + 跟读示范（正常 + 慢速两版）
-  - en-US-EmmaNeural（女声）：对话模块（二期接入，先占位不生成）
+  - en-US-EmmaNeural（女声）：对话模块提问 + 示范回答（正常 + 慢速两版）
 
 用法：
     python gen_audio.py            增量生成（已存在的跳过）
@@ -36,8 +36,10 @@ MANIFEST = os.path.join(AUDIO_DIR, "manifest.json")
 TMP_CJS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_gameconfig.cjs")
 
 VOICE_ANA = "en-US-AnaNeural"
+VOICE_EMMA = "en-US-EmmaNeural"
 SLOW_RATE = "-50%"
 CONCURRENCY = 5
+TMP_DLG_CJS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_dialogues.cjs")
 
 PY314 = r"C:/Users/86139/AppData/Local/Programs/Python/Python314/python.exe"
 
@@ -57,6 +59,24 @@ def extract_vocab():
     r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=30)
     if r.returncode != 0:
         sys.exit(f"[错误] node 提取词库失败：{r.stderr.strip()}")
+    return json.loads(r.stdout)
+
+
+def extract_dialogue_lines():
+    # 用 esbuild 把 dialogues.ts 编成 CJS，取 DIALOGUE_LINES（对话 cue/reply 文本）
+    r = subprocess.run(
+        ["npx", "esbuild",
+         os.path.join("src", "config", "dialogues.ts"),
+         "--bundle", "--format=cjs", "--outfile=" + TMP_DLG_CJS.replace('\\', '/')],
+        cwd=FRONTEND, capture_output=True, text=True, timeout=120, shell=True,
+    )
+    if r.returncode != 0:
+        sys.exit(f"[错误] esbuild 编译 dialogues.ts 失败：{r.stderr.strip()}")
+    js = "const g = require(" + json.dumps(TMP_DLG_CJS.replace('\\', '/')) + ");" \
+         "process.stdout.write(JSON.stringify(g.DIALOGUE_LINES))"
+    r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=30)
+    if r.returncode != 0:
+        sys.exit(f"[错误] node 提取对话文本失败：{r.stderr.strip()}")
     return json.loads(r.stdout)
 
 
@@ -90,7 +110,7 @@ async def run(dry_run):
 
     sem = asyncio.Semaphore(CONCURRENCY)
     made, skipped = [0], [0]
-    manifest = {"ana": {}}
+    manifest = {"ana": {}, "emma": {}}
     tasks = []
 
     for item in vocab:
@@ -105,6 +125,18 @@ async def run(dry_run):
         tasks.append(synth(sem, text, VOICE_ANA, "+0%", os.path.join(AUDIO_DIR, f_n), made, skipped))
         tasks.append(synth(sem, text, VOICE_ANA, SLOW_RATE, os.path.join(AUDIO_DIR, f_s), made, skipped))
 
+    # ── Emma 女声：对话模块的 cue / reply 各生成正常 + 慢速两版 ──
+    dlg_lines = extract_dialogue_lines()
+    for text in dlg_lines:
+        f_n = filename(text, "e_n")
+        f_s = filename(text, "e_s")
+        manifest["emma"][text.strip().lower()] = {"n": f_n, "s": f_s}
+        if dry_run:
+            print(f"[dry-run/emma] {text[:40]}  →  {f_n} / {f_s}")
+            continue
+        tasks.append(synth(sem, text, VOICE_EMMA, "+0%", os.path.join(AUDIO_DIR, f_n), made, skipped))
+        tasks.append(synth(sem, text, VOICE_EMMA, SLOW_RATE, os.path.join(AUDIO_DIR, f_s), made, skipped))
+
     if not dry_run:
         await asyncio.gather(*tasks)
 
@@ -114,7 +146,7 @@ async def run(dry_run):
     os.makedirs(AUDIO_DIR, exist_ok=True)
     with open(MANIFEST, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=1)
-    print(f"manifest 已写入（{len(manifest['ana'])} 条）")
+    print(f"manifest 已写入（Ana {len(manifest['ana'])} 条 / Emma {len(manifest['emma'])} 条）")
     print(f"本次生成 {made[0]} 个，跳过已有 {skipped[0]} 个")
 
 
@@ -133,8 +165,9 @@ def main():
         with open(MANIFEST, encoding="utf-8") as f:
             keep = set()
             man = json.load(f)
-            for entry in man["ana"].values():
-                keep.add(entry["n"]); keep.add(entry["s"])
+            for voice in ("ana", "emma"):
+                for entry in man.get(voice, {}).values():
+                    keep.add(entry["n"]); keep.add(entry["s"])
         removed = 0
         for name in os.listdir(AUDIO_DIR):
             if name.endswith(".mp3") and name not in keep:
