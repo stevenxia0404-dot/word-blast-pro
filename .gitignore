@@ -6,6 +6,10 @@ dist/
 Thumbs.db
 .wrangler/
 
+# 本地密钥（wrangler dev / Resend），绝不入库
+.dev.vars
+.env.local
+
 # 回归测试 / 构建脚本中间产物（esbuild 从 .ts 生成，勿入库）
 tests/_*.js
 tools/_*.cjs

@@ -1,7 +1,10 @@
+import { handleRequest, d1Store, ensureSchema } from '../../functions/api/sync/_core.js'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
+  'Access-Control-Allow-Headers': 'Content-Type, X-API-Key, Authorization',
+  'Cache-Control': 'no-store',
 }
 
 function json(data, status = 200) {
@@ -41,6 +44,36 @@ export default {
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders })
+    }
+
+    // ── 跨设备同步 API（与 Pages Functions 共用 _core.js，独立通道兜底） ──
+    if (path.startsWith('/api/sync')) {
+      try {
+        await ensureSchema(env.DB)
+      } catch {
+        return json({ error: '云端数据库未就绪，本机数据不受影响' }, 503)
+      }
+      let syncBody = {}
+      if (request.method === 'POST' || request.method === 'DELETE') {
+        try { syncBody = await request.json() } catch { syncBody = {} }
+      }
+      let out
+      try {
+        out = await handleRequest(env, {
+          method: request.method,
+          path: path.replace(/^\/api\/sync\/?/, '').replace(/\/$/, ''),
+          body: syncBody,
+          headers: {
+            authorization: request.headers.get('Authorization') || '',
+            ip: request.headers.get('CF-Connecting-IP') || '',
+          },
+          store: d1Store(env.DB),
+          now: Date.now(),
+        })
+      } catch {
+        out = { status: 500, body: { error: '服务异常，本机数据不受影响' } }
+      }
+      return json(out.body, out.status)
     }
 
     // ── Public routes (no auth) ──

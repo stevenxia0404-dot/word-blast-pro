@@ -9,7 +9,6 @@ import { spokenTotal, loadModuleProgress } from './hooks/useSpokenRecords'
 import { downloadCsvTemplate } from './config/wordParser'
 import { preloadVoices, unlockAudio, speakWord, stopNeural } from './hooks/useAudio'
 import { HomeScreen } from './components/HomeScreen'
-import { ComingSoonPanel } from './components/ComingSoonPanel'
 import { ScoreBoard } from './components/ScoreBoard'
 import { GameCanvas } from './components/GameCanvas'
 import { SpellCanvas } from './components/SpellCanvas'
@@ -23,6 +22,10 @@ import { WordImport } from './components/WordImport'
 import { FeedbackForm } from './components/FeedbackForm'
 import { RepeatModule } from './components/RepeatModule'
 import { DialogueModule } from './components/DialogueModule'
+import { SyncPanel } from './components/SyncPanel'
+import { ParentPanel } from './components/ParentPanel'
+import { ReportPanel } from './components/ReportPanel'
+import { useSync } from './hooks/useSync'
 import Inspector from './components/Inspector'
 
 function App() {
@@ -44,8 +47,9 @@ function App() {
   const [showGuide, setShowGuide] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showWordImport, setShowWordImport] = useState(false)
-  /* 二期功能占位：跨设备同步 / 家长区 / 学习报告（尚未实现，先给入口与说明） */
-  const [comingSoon, setComingSoon] = useState<'sync' | 'parent' | 'report' | null>(null)
+  /* 二期第二批：三个功能区全部为真实实现 */
+  const [panel, setPanel] = useState<'sync' | 'parent' | 'report' | null>(null)
+  const sync = useSync()
   /* 模块分发：home = 模块首页，blast = 拼写闯关，repeat = 跟读练习
    * 与 prog.phase 解耦：首页恒为第一屏，phase 只描述闯关内部状态 */
   const [module, setModule] = useState<'home' | 'blast' | 'repeat' | 'dialogue' | 'certificate'>('home')
@@ -255,8 +259,20 @@ function App() {
   return (
     <>
       <VersionBanner onConfirm={() => {}} />
-      {comingSoon && (
-        <ComingSoonPanel feature={comingSoon} onClose={() => setComingSoon(null)} />
+      {panel === 'sync' && (
+        <SyncPanel sync={sync} onClose={() => setPanel(null)} />
+      )}
+      {panel === 'parent' && (
+        <ParentPanel
+          sync={sync}
+          onOpenSync={() => setPanel('sync')}
+          onOpenImport={() => { setPanel(null); setShowWordImport(true) }}
+          onOpenReport={() => setPanel('report')}
+          onClose={() => setPanel(null)}
+        />
+      )}
+      {panel === 'report' && (
+        <ReportPanel onClose={() => setPanel(null)} />
       )}
 
       {showWordImport && (
@@ -284,15 +300,16 @@ function App() {
           hasCustomVocab={hasCustom}
           progress={progress}
           demo={demo}
+          syncSigned={sync.signed}
           onStartBlast={startBlast}
           onStartRepeat={() => setModule('repeat')}
           onStartDialogue={() => setModule('dialogue')}
           onPreviewCertificate={() => setModule('certificate')}
           onOpenImport={() => setShowWordImport(true)}
           onDownloadTemplate={downloadCsvTemplate}
-          onOpenSync={() => setComingSoon('sync')}
-          onOpenParent={() => setComingSoon('parent')}
-          onOpenReport={() => setComingSoon('report')}
+          onOpenSync={() => setPanel('sync')}
+          onOpenParent={() => setPanel('parent')}
+          onOpenReport={() => setPanel('report')}
         />
       )}
 

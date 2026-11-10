@@ -28,7 +28,7 @@ const ok = (c, label, extra = '') => {
   const page = await ctx.newPage()
   // 跳过首次启动的版本更新弹窗（它 z-[300] 挡住点击；v3.0 文案在 L5 处理）
   await ctx.addInitScript(() => {
-    try { localStorage.setItem('wordblast_banner_v2', 'v3.2') } catch {}
+    try { localStorage.setItem('wordblast_banner_v2', 'v3.3') } catch {}
   })
   const errors = []
   page.on('pageerror', e => errors.push('pageerror: ' + e.message))

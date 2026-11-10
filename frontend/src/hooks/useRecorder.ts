@@ -17,6 +17,22 @@ export function isRestrictedWebView(): boolean {
   return /MicroMessenger|WeChat|QQ\/|wxwork|DingTalk|Feishu|Lark/i.test(ua)
 }
 
+/**
+ * 录音能力探测（iOS Safari / 微信内置浏览器降级用）。
+ * 不支持时前端直接给「跳过录音，只听示范自评」，绝不把人卡在录音这一步。
+ */
+export function recordingSupport(): { supported: boolean; reason: string } {
+  if (typeof window === 'undefined') return { supported: false, reason: '当前环境不支持录音' }
+  if (!window.isSecureContext) return { supported: false, reason: '需要 HTTPS 安全连接才能录音，请用正式网址打开' }
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    return { supported: false, reason: '此浏览器不支持录音，建议用 Safari 或 Chrome 打开' }
+  }
+  if (isRestrictedWebView()) {
+    return { supported: false, reason: '微信 / QQ 内置浏览器不支持录音，请点右上角「···」用系统浏览器打开' }
+  }
+  return { supported: true, reason: '' }
+}
+
 /** 各浏览器录音格式不同，必须按实际格式标记，否则 Safari 拒绝回放 */
 function pickMime(): string {
   if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return ''
@@ -101,8 +117,9 @@ export function useRecorder(onError?: (msg: string) => void) {
    *  maxSeconds：本次录音上限（句子用 20s，单词用 10s） */
   const start = useCallback(async (maxSeconds: number = MAX_REC_SECONDS): Promise<boolean> => {
     if (startingRef.current) return false
-    if (!window.MediaRecorder) {
-      onError?.('此浏览器不支持录音，建议用 Safari 或 Chrome 打开')
+    const support = recordingSupport()
+    if (!support.supported) {
+      onError?.(support.reason)
       return false
     }
     startingRef.current = true

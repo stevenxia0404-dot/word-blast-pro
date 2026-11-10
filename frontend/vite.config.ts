@@ -7,6 +7,12 @@ export default defineConfig({
   // dev-frame 标注器收件通道：同源 /api/dev-marks → 本机收件服务（仅 dev 生效，生产构建不受影响）
   server: {
     proxy: {
+      // 本地同步 API（wrangler pages dev 起在 8788 时可直连；E2E 用 Playwright 拦截）
+      '/sync-api': {
+        target: 'http://127.0.0.1:8788',
+        changeOrigin: true,
+        rewrite: p => p.replace(/^\/sync-api/, '/api/sync'),
+      },
       '/api/dev-marks': {
         target: 'http://127.0.0.1:8787',
         changeOrigin: true,

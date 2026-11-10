@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { VocabItem, LevelConfig } from '../config/gameConfig'
 import { classifyVocab } from '../config/gameConfig'
 import { CUSTOM_VOCAB_KEY, generateLevels } from '../config/wordParser'
@@ -65,9 +65,11 @@ function load(): VocabGroup[] {
   }
 }
 
-function save(groups: VocabGroup[]) {
+function save(groups: VocabGroup[], cleared = false) {
   try {
-    localStorage.setItem(CUSTOM_VOCAB_KEY, JSON.stringify({ groups }))
+    // cleared 只有「用户主动删空」才为 true：新设备挂载时写的是 false，
+    // 同步层据此区分「空设备」与「清空操作」，避免一台空设备清掉云端词库。
+    localStorage.setItem(CUSTOM_VOCAB_KEY, JSON.stringify({ groups, cleared, updatedAt: Date.now() }))
   } catch { /* quota exceeded */ }
 }
 
@@ -100,6 +102,8 @@ function buildCombined(groups: VocabGroup[]): { vocab: VocabItem[]; levels: Leve
 
 export function useCustomVocab() {
   const [groups, setGroups] = useState<VocabGroup[]>(load)
+  /** 本次变更是否由「主动清空/删到最后一组」触发，供 save() 打标记 */
+  const clearedRef = useRef(false)
 
   const combined = useMemo(() => buildCombined(groups), [groups])
 
@@ -107,7 +111,8 @@ export function useCustomVocab() {
    * 写盘副作用若放在 updater 内会时序错乱（曾导致二次导入整组丢失）。
    * effect 是幂等的，双调用无影响。 */
   useEffect(() => {
-    save(groups)
+    save(groups, clearedRef.current)
+    clearedRef.current = false
   }, [groups])
 
   /** 导入新的一组（累加，不覆盖历史） */
@@ -130,16 +135,18 @@ export function useCustomVocab() {
     })
   }, [])
 
-  /** 删除整组 */
+  /** 删除整组（删到一组不剩时视为主动清空，需同步到云端） */
   const deleteGroup = useCallback((id: string) => {
     setGroups(prev => {
       const next = prev.filter(g => g.id !== id)
+      if (next.length === 0) clearedRef.current = true
       return next
     })
   }, [])
 
   /** 清空全部 */
   const clearAllVocab = useCallback(() => {
+    clearedRef.current = true
     setGroups([])
   }, [])
 

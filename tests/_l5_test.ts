@@ -36,7 +36,7 @@ const ok = (c, l, e = '') => { if (c) console.log('  ✅', l); else { fail++; co
   }
 
   const bannerText = btnCount > 0 ? await page.locator('body').innerText() : ''
-  ok(bannerText.includes('v3.2'), '版本弹窗显示 v3.2')
+  ok(bannerText.includes('v3.3'), '版本弹窗显示 v3.3')
   ok(bannerText.includes('跟读练习'), '弹窗含跟读练习说明')
   ok(bannerText.includes('老成绩全部保留'), '弹窗含成绩保留说明')
 
@@ -60,7 +60,7 @@ const ok = (c, l, e = '') => { if (c) console.log('  ✅', l); else { fail++; co
   ok(guide.includes('不保存'), '说明页写明录音不上传')
   ok(guide.includes('闯关分 + 口语分'), '说明页称号口径更新')
   ok(guide.includes('单词关'), '说明页写明单词关/运用关结构')
-  ok(guide.includes('v3.2'), '说明页版本号 v3.2')
+  ok(guide.includes('v3.3'), '说明页版本号 v3.3')
   ok(guide.includes('金色大满贯证书'), '说明页写明大满贯证书')
   ok(guide.includes('女声 Emma'), '说明页写明 Emma 音色')
 

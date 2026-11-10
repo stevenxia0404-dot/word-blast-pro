@@ -10,7 +10,7 @@ import {
   speakDialogue, stopNeural, playRecordingUrl, playSoftTone,
   preloadVoices, unlockAudio,
 } from '../hooks/useAudio'
-import { useRecorder, isRestrictedWebView } from '../hooks/useRecorder'
+import { useRecorder, isRestrictedWebView, recordingSupport } from '../hooks/useRecorder'
 import { recordDialogue, loadDialogue, loadModuleProgress } from '../hooks/useSpokenRecords'
 
 /** 一组 4 轮：整句开口更累，别一次塞 8 组 */
@@ -46,9 +46,12 @@ export function DialogueModule({ onExit }: Props) {
   const [showAnswer, setShowAnswer] = useState(false)
   const [celebrate, setCelebrate] = useState(false)
   const [session, setSession] = useState({ first: 0, review: 0, score: 0, badge: false })
+  /* 录音不可用时允许跳过：听 Emma 示范 → 自己开口说 → 自评 */
+  const [skipped, setSkipped] = useState(false)
 
   const { recState, recordingUrl, start, stop, cancel } = useRecorder()
   const restricted = useMemo(() => isRestrictedWebView(), [])
+  const recSupport = useMemo(() => recordingSupport(), [])
   const badgeAtStart = useRef(loadModuleProgress(false).dialogueDone)
 
   const round = queue[idx]
@@ -59,6 +62,7 @@ export function DialogueModule({ onExit }: Props) {
     stopNeural()
     setPlaying(null)
     setShowAnswer(false)
+    setSkipped(false)
     cancel()
     const t = setTimeout(() => {
       setPlaying('cue')
@@ -106,6 +110,7 @@ export function DialogueModule({ onExit }: Props) {
 
   const handleRetry = useCallback(() => {
     cancel()
+    setSkipped(false)
   }, [cancel])
 
   const handleMastered = useCallback(() => {
@@ -152,7 +157,9 @@ export function DialogueModule({ onExit }: Props) {
     : recState === 'starting' ? '正在启动麦克风…'
     : recState === 'processing' ? '处理中…'
     : recordingUrl ? '已录音 ✓ 对比听听：先听 Emma 示范，再听你的'
-    : '轮到你了，点麦克风说出回答'
+    : skipped ? '已跳过录音：听示范，自己开口说一遍也能自评'
+    : recSupport.supported ? '轮到你了，点麦克风说出回答'
+    : recSupport.reason
 
   if (phase === 'done') {
     return (
@@ -281,24 +288,41 @@ export function DialogueModule({ onExit }: Props) {
         )}
       </div>
 
-      {/* 麦克风 */}
-      <button
-        type="button"
-        onClick={onMic}
-        disabled={recState === 'starting' || recState === 'processing'}
-        className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full text-3xl sm:text-4xl font-bold shadow-[0_12px_28px_rgba(56,189,248,0.35)] transition-all active:scale-90 mt-1 ${
-          recState === 'recording'
-            ? 'bg-red-500 text-white animate-pulse shadow-[0_12px_28px_rgba(239,68,68,0.4)]'
-            : 'bg-sky-400 text-white hover:bg-sky-500'
-        } disabled:opacity-50`}
-        aria-label="录音"
-      >
-        {micLabel}
-      </button>
+      {/* 麦克风；设备不支持则换成「跳过录音」 */}
+      {!recSupport.supported ? (
+        <button
+          type="button"
+          onClick={() => setSkipped(true)}
+          className="w-20 h-20 sm:w-24 sm:h-24 rounded-full text-base font-bold bg-amber-400 text-white shadow-[0_12px_28px_rgba(245,158,11,0.35)] transition-all active:scale-90 mt-1 px-2"
+          aria-label="跳过录音"
+        >
+          🎧 跳过录音
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onMic}
+          disabled={recState === 'starting' || recState === 'processing'}
+          className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full text-3xl sm:text-4xl font-bold shadow-[0_12px_28px_rgba(56,189,248,0.35)] transition-all active:scale-90 mt-1 ${
+            recState === 'recording'
+              ? 'bg-red-500 text-white animate-pulse shadow-[0_12px_28px_rgba(239,68,68,0.4)]'
+              : 'bg-sky-400 text-white hover:bg-sky-500'
+          } disabled:opacity-50`}
+          aria-label="录音"
+        >
+          {micLabel}
+        </button>
+      )}
       <p className="text-sm font-semibold text-emerald-700 text-center min-h-[1.5rem]">{statusText}</p>
+      {recSupport.supported && !recordingUrl && !skipped && (
+        <button type="button" onClick={() => setSkipped(true)}
+          className="text-[11px] font-bold text-gray-400 underline underline-offset-2 hover:text-amber-600">
+          设备不支持录音？跳过，只听示范自评
+        </button>
+      )}
 
-      {/* 对比面板 */}
-      {recordingUrl && (
+      {/* 对比面板（录完 / 跳过录音后出现） */}
+      {(recordingUrl || skipped) && (
         <div className="w-full bg-white/95 rounded-[2rem] p-4 sm:p-5 shadow-[0_16px_36px_rgba(56,189,248,0.18)] border-4 border-sky-100 space-y-3">
           <div className="flex items-center gap-2">
             <button
@@ -311,16 +335,27 @@ export function DialogueModule({ onExit }: Props) {
               🔊 Emma 示范
             </button>
             <span className="text-xl text-gray-300">↔</span>
-            <button
-              type="button"
-              onClick={playMine}
-              className={`flex-1 text-sm sm:text-base font-bold py-2.5 rounded-xl border-2 transition-all active:scale-95 ${
-                playing === 'mine' ? 'bg-blue-500 text-white border-blue-500' : 'bg-blue-50 text-blue-700 border-blue-200'
-              }`}
-            >
-              👤 我的录音
-            </button>
+            {recordingUrl ? (
+              <button
+                type="button"
+                onClick={playMine}
+                className={`flex-1 text-sm sm:text-base font-bold py-2.5 rounded-xl border-2 transition-all active:scale-95 ${
+                  playing === 'mine' ? 'bg-blue-500 text-white border-blue-500' : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}
+              >
+                👤 我的录音
+              </button>
+            ) : (
+              <span className="flex-1 text-xs font-bold py-2.5 rounded-xl bg-gray-50 text-gray-400 border-2 border-gray-100 text-center">
+                🎧 已跳过录音
+              </span>
+            )}
           </div>
+          {skipped && !recordingUrl && (
+            <p className="text-[11px] text-amber-700 bg-amber-50 rounded-xl px-3 py-2 border border-amber-100">
+              设备不支持录音也没关系：听 Emma 示范，自己开口回答一遍，再点「我会了」照样计分。
+            </p>
+          )}
           <div className="flex gap-2">
             <button
               type="button"

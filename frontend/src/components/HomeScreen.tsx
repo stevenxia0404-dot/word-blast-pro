@@ -14,6 +14,8 @@ interface Props {
   title: TitleDef
   hasCustomVocab: boolean
   progress: ModuleProgress
+  /** 同步是否已开启，底部提示随之变化 */
+  syncSigned?: boolean
   /** dev 演示：?grand 强制点亮三枚勋章，可一键预览金色大满贯证书 */
   demo?: boolean
   onStartBlast: () => void
@@ -35,7 +37,7 @@ const BLAST_SUBTITLE = {
 
 export function HomeScreen({
   blastAction, blastLevel, blastScore, spokenScore, title,
-  hasCustomVocab, progress, demo,
+  hasCustomVocab, progress, demo, syncSigned,
   onStartBlast, onStartRepeat, onStartDialogue, onPreviewCertificate,
   onOpenImport, onDownloadTemplate, onOpenSync, onOpenParent, onOpenReport,
 }: Props) {
@@ -171,9 +173,11 @@ export function HomeScreen({
               <span>学习报告</span>
             </button>
           </div>
-          <p className="text-[11px] text-lime-600 mb-1">（词库保存在当前设备上 · 跨设备同步即将上线）</p>
+          <p className="text-[11px] text-lime-600 mb-1">
+            {syncSigned ? '（☁️ 同步已开启 · 进度与词库多设备共享）' : '（本机离线可用 · 登录后自动跨设备同步）'}
+          </p>
 
-          <p className="text-[11px] text-emerald-400 mt-1">v3.2</p>
+          <p className="text-[11px] text-emerald-400 mt-1">v3.3</p>
         </div>
       </div>
     </div>
