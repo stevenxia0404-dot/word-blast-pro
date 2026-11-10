@@ -5,7 +5,7 @@
  *  2. JWT 自包含：payload 带 sub/ver/exp，不建 session 表
  *  3. 送达才入库：邮件发送成功（或本地 dev 模式）才写 auth_codes
  *  4. 服务端二次校验：验签 + exp + 用户存在 + token_version 一致 + 字段级清洗
- *  5. 降级不丢数据：无 Resend 凭据时用「同步码」建空间；断网时前端本地照常用
+ *  5. 降级不丢数据：邮件不可用时登录暂停、失败无旁路；断网时本机照常用
  *  6. 录音不上传：同步白名单里根本没有录音/audio 字段
  *
  * 这一层不碰 Request/Response，方便 Node 里用 memoryStore 直接跑端到端逻辑回归。
@@ -19,6 +19,7 @@ const MAX_PAYLOAD = 256 * 1024
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export const SCHEMA = [
+  /* recovery_hash 是 v3.3 同步码遗留列，保留只为兼容线上已建 D1 表；v3.4 起不再读写 */
   `CREATE TABLE IF NOT EXISTS sync_users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE,
@@ -55,19 +56,17 @@ export async function ensureSchema(db) {
 /* ── 数据访问层 ───────────────────────────────────────────── */
 
 export function memoryStore() {
-  const users = new Map(), byEmail = new Map(), byRecovery = new Map()
+  const users = new Map(), byEmail = new Map()
   const codes = new Map(), saves = new Map(), config = new Map()
   const clone = o => (o ? JSON.parse(JSON.stringify(o)) : null)
   return {
     async ensure() {},
     async getUser(id) { return clone(users.get(id)) },
     async getUserByEmail(e) { return clone(byEmail.get(e)) },
-    async getUserByRecovery(h) { return clone(byRecovery.get(h)) },
     async putUser(u) {
       const row = { ...u }
       users.set(row.id, row)
       if (row.email) byEmail.set(row.email, row)
-      if (row.recovery_hash) byRecovery.set(row.recovery_hash, row)
     },
     async setTokenVersion(id, v) {
       const row = users.get(id)
@@ -75,7 +74,6 @@ export function memoryStore() {
       row.token_version = v
       users.set(id, row)
       if (row.email) byEmail.set(row.email, row)
-      if (row.recovery_hash) byRecovery.set(row.recovery_hash, row)
     },
     async getCode(e) { return clone(codes.get(e)) },
     async putCode(c) { codes.set(c.email, { ...c }) },
@@ -114,14 +112,11 @@ export function d1Store(db) {
     async getUserByEmail(e) {
       return await db.prepare('SELECT * FROM sync_users WHERE email = ?').bind(e).first()
     },
-    async getUserByRecovery(h) {
-      return await db.prepare('SELECT * FROM sync_users WHERE recovery_hash = ?').bind(h).first()
-    },
     async putUser(u) {
       await db.prepare(
-        'INSERT INTO sync_users (id,email,recovery_hash,token_version,created_at) VALUES (?,?,?,?,?) ' +
-        'ON CONFLICT(id) DO UPDATE SET email=excluded.email, recovery_hash=excluded.recovery_hash'
-      ).bind(u.id, u.email, u.recovery_hash, u.token_version, u.created_at).run()
+        'INSERT INTO sync_users (id,email,token_version,created_at) VALUES (?,?,?,?) ' +
+        'ON CONFLICT(id) DO UPDATE SET email=excluded.email'
+      ).bind(u.id, u.email, u.token_version, u.created_at).run()
     },
     async setTokenVersion(id, v) {
       await db.prepare('UPDATE sync_users SET token_version = ? WHERE id = ?').bind(v, id).run()
@@ -234,11 +229,6 @@ function sixDigit() {
   const a = randomBytes(4)
   const n = ((a[0] << 24) | (a[1] << 16) | (a[2] << 8) | a[3]) >>> 0
   return String(100000 + (n % 900000))
-}
-function recoveryCode() {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  const a = randomBytes(20)
-  return [...a].map(b => alphabet[b % alphabet.length]).join('')
 }
 async function codeHash(email, code, secret) {
   return await digest('v1|' + email + '|' + code + '|' + secret)
@@ -445,7 +435,8 @@ async function sendMail(env, email, code) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: env.RESEND_FROM,
+        // 照菠萝日程：域名 boluomate.com 已在 Resend 验证，只需 API Key
+        from: `Word Blast <${env.RESEND_FROM || env.SENDER_EMAIL || 'noreply@boluomate.com'}>`,
         to: [email],
         subject: 'Word Blast 登录验证码',
         text: '你的 Word Blast 登录验证码是 ' + code + '\n5 分钟内有效，用完即失效。若不是你本人操作，请忽略本邮件。',
@@ -456,7 +447,7 @@ async function sendMail(env, email, code) {
 }
 
 function isDev(env) { return env.ALLOW_DEV_CODE === '1' || env.ALLOW_DEV_CODE === 'true' }
-function mailReady(env) { return !!(env.RESEND_API_KEY && env.RESEND_FROM) }
+function mailReady(env) { return !!env.RESEND_API_KEY }
 function normEmail(v) { return String(v || '').trim().toLowerCase().slice(0, 120) }
 
 const ok = body => ({ status: 200, body: { ok: true, ...body } })
@@ -468,7 +459,8 @@ async function requireUser(env, headers, store, now) {
   const payload = await verifyJwt(token, secret)
   if (!payload || !payload.sub || !payload.exp || payload.exp * 1000 <= now) return null
   const user = await store.getUser(payload.sub)
-  if (!user) return null
+  // v3.4：同步码账号（email 为空）一律不再放行，旧 token 不能变成隐形旁路
+  if (!user || !user.email) return null
   if (Number(payload.ver) !== Number(user.token_version)) return null
   return user
 }
@@ -489,7 +481,7 @@ export async function handleRequest(env, req) {
       if (!EMAIL_RE.test(email)) return err(400, '请输入有效的邮箱地址')
       if (!rateHit('code:' + email, 1, RESEND_LIMIT, now)) return err(429, '60 秒内只能发送一次验证码')
       if (!mailReady(env) && !isDev(env)) {
-        return err(501, '邮件服务未配置，请用同步码登录', 'MAIL_NOT_CONFIGURED')
+        return err(501, '邮件服务未配置，请稍后再试或联系管理员', 'MAIL_NOT_CONFIGURED')
       }
       const code = sixDigit()
       const secret = await getSecret(env, store)
@@ -497,7 +489,7 @@ export async function handleRequest(env, req) {
       if (mailReady(env)) {
         const sent = await sendMail(env, email, code)
         // 送达才入库：发信失败不写验证码，用户不会拿到「永远验不过」的码
-        if (!sent.ok) return err(502, '验证码邮件发送失败，请用同步码登录', 'MAIL_FAILED')
+        if (!sent.ok) return err(502, '验证码邮件发送失败，请稍后重试', 'MAIL_FAILED')
       }
       await store.putCode({ email, code_hash: hash, expires_at: now + CODE_TTL, attempts: 0, created_at: now })
       return ok({ sent: mailReady(env), devCode: isDev(env) && !mailReady(env) ? code : undefined, expiresIn: 300 })
@@ -525,7 +517,7 @@ export async function handleRequest(env, req) {
       await store.delCode(email)  // 一次性
       let user = await store.getUserByEmail(email)
       if (!user) {
-        user = { id: uid(), email, recovery_hash: null, token_version: 1, created_at: now }
+        user = { id: uid(), email, token_version: 1, created_at: now }
         await store.putUser(user)
       }
       const token = await signJwt({
@@ -533,39 +525,6 @@ export async function handleRequest(env, req) {
         iat: Math.floor(now / 1000), exp: Math.floor((now + TOKEN_TTL) / 1000),
       }, secret)
       return ok({ token, email, userId: user.id, expiresAt: now + TOKEN_TTL })
-    }
-
-    if (path === 'space' && method === 'POST') {
-      if (!rateHit('space:' + (headers.ip || 'anon'), 5, RESEND_LIMIT, now)) {
-        return err(429, '操作太频繁，稍后再试')
-      }
-      const code = recoveryCode()
-      const secret = await getSecret(env, store)
-      const hash = await digest('recovery|' + code + '|' + secret)
-      const user = { id: uid(), email: null, recovery_hash: hash, token_version: 1, created_at: now }
-      await store.putUser(user)
-      const token = await signJwt({
-        sub: user.id, ver: user.token_version,
-        iat: Math.floor(now / 1000), exp: Math.floor((now + TOKEN_TTL) / 1000),
-      }, secret)
-      return ok({ token, recoveryCode: code, userId: user.id, email: null, expiresAt: now + TOKEN_TTL })
-    }
-
-    if (path === 'claim' && method === 'POST') {
-      const raw = String(body.recoveryCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
-      if (raw.length < 12) return err(400, '请输入完整的同步码')
-      if (!rateHit('claim:' + (headers.ip || 'anon'), 8, RESEND_LIMIT, now)) {
-        return err(429, '尝试太频繁，一分钟后重试')
-      }
-      const secret = await getSecret(env, store)
-      const hash = await digest('recovery|' + raw + '|' + secret)
-      const user = await store.getUserByRecovery(hash)
-      if (!user) return err(404, '同步码不正确，请核对后重试')
-      const token = await signJwt({
-        sub: user.id, ver: user.token_version,
-        iat: Math.floor(now / 1000), exp: Math.floor((now + TOKEN_TTL) / 1000),
-      }, secret)
-      return ok({ token, userId: user.id, email: user.email, expiresAt: now + TOKEN_TTL })
     }
 
     /* ── 以下需要登录 ── */

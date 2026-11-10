@@ -103,20 +103,25 @@ const call = (path: string, method = 'POST', body: any = {}, headers: any = {}, 
   const tooBig = await call('data', 'POST', { data: { pad: 'x'.repeat(300000) }, baseVersion: 2 }, auth, NOW + 94000)
   ok(tooBig.status === 413, '超大上传被拒（云端数据不被破坏）')
 
-  console.log('\n[6] 同步码：另一台设备加入同一空间')
-  const sp = await call('space', 'POST', {}, { ip: '1.1.1.1' }, NOW + 95000)
-  ok(sp.status === 200 && sp.body.recoveryCode.length === 20, '创建同步空间返回 20 位同步码')
-  const claim = await call('claim', 'POST', { recoveryCode: sp.body.recoveryCode.toLowerCase() }, { ip: '2.2.2.2' }, NOW + 96000)
-  ok(claim.status === 200 && claim.body.userId === sp.body.userId, '另一设备用同步码加入同一 userId')
-  const badClaim = await call('claim', 'POST', { recoveryCode: 'ABCDEFGHJKLMN123456' }, { ip: '3.3.3.3' }, NOW + 97000)
-  ok(badClaim.status === 404, '错误同步码被拒')
-  const auth2 = { authorization: 'Bearer ' + sp.body.token }
-  await call('data', 'POST', { data: B, baseVersion: 0 }, auth2, NOW + 98000)
-  const fromB = await call('data', 'GET', {}, { authorization: 'Bearer ' + claim.body.token }, NOW + 99000)
+  console.log('\n[6] v3.4：同步码已下线 · 同一邮箱在两台设备登录同一账号')
+  const gone1 = await call('space', 'POST', {}, { ip: '1.1.1.1' }, NOW + 95000)
+  ok(gone1.status === 404, 'space 接口已删除（不能再建同步空间）')
+  const gone2 = await call('claim', 'POST', { recoveryCode: 'ABCDEFGHJKLMN123456' }, { ip: '1.1.1.2' }, NOW + 95100)
+  ok(gone2.status === 404, 'claim 接口已删除（同步码不再是旁路）')
+  const T6 = NOW + 96000
+  const mailA = await call('code', 'POST', { email: 'kid@example.com' }, {}, T6)
+  const loginA = await call('verify', 'POST', { email: 'kid@example.com', code: mailA.body.devCode }, {}, T6 + 500)
+  ok(loginA.status === 200 && !!loginA.body.token, '设备 A 用邮箱验证码登录')
+  const mailB = await call('code', 'POST', { email: 'kid@example.com' }, {}, T6 + 61000)
+  const loginB = await call('verify', 'POST', { email: 'kid@example.com', code: mailB.body.devCode }, {}, T6 + 61500)
+  ok(loginB.status === 200 && loginB.body.userId === loginA.body.userId, '设备 B 输同一邮箱登录到同一 userId')
+  const auth2 = { authorization: 'Bearer ' + loginA.body.token }
+  await call('data', 'POST', { data: B, baseVersion: 0 }, auth2, T6 + 62000)
+  const fromB = await call('data', 'GET', {}, { authorization: 'Bearer ' + loginB.body.token }, T6 + 62500)
   ok(fromB.status === 200 && fromB.body.data.spoken.pear === 2000, '两台设备读到同一份存档')
-  const clearedCloud = await call('data', 'DELETE', {}, auth2, NOW + 100000)
+  const clearedCloud = await call('data', 'DELETE', {}, auth2, T6 + 63000)
   ok(clearedCloud.status === 200, '可清空云端数据')
-  const afterClear = await call('data', 'GET', {}, auth2, NOW + 101000)
+  const afterClear = await call('data', 'GET', {}, auth2, T6 + 63500)
   ok(afterClear.body.data.spoken === null, '清空后云端为空（本机数据不受影响）')
 
   console.log('\n[7] 无邮件服务时验证码不入库（送达才入库）')
@@ -125,8 +130,24 @@ const call = (path: string, method = 'POST', body: any = {}, headers: any = {}, 
     method: 'POST', path: 'code', body: { email: 'x@example.com' },
     headers: {}, store: store2, now: NOW + 110000,
   })
-  ok(r.status === 501 && r.body.code === 'MAIL_NOT_CONFIGURED', '未配邮件直接提示改用同步码')
+  ok(r.status === 501 && r.body.code === 'MAIL_NOT_CONFIGURED', '未配邮件时登录直接失败')
+  ok(!r.body.devCode && !r.body.recoveryCode, '失败时不回传验证码、不给同步码旁路')
   ok((await store2.getCode('x@example.com')) === null, '没有发信就没有验证码记录')
+
+  console.log('\n[7b] v3.3 同步码旧账号的 token 不再放行')
+  await store.putUser({ id: 'legacy-space', email: null, recovery_hash: 'x', token_version: 1, created_at: NOW })
+  const legacyToken = await signJwt({
+    sub: 'legacy-space', ver: 1,
+    iat: Math.floor(NOW / 1000), exp: Math.floor(NOW / 1000) + 9999,
+  }, secret)
+  ok((await call('data', 'GET', {}, { authorization: 'Bearer ' + legacyToken })).status === 401,
+    '无邮箱的旧同步码账号被拒绝（同步码彻底下线）')
+
+  console.log('\n[8] 照菠萝日程配置：只配 RESEND_API_KEY 即启用')
+  const cfgKey = await handleRequest({ RESEND_API_KEY: 're_test' } as any, {
+    method: 'GET', path: 'config', body: {}, headers: {}, store: memoryStore(), now: NOW,
+  })
+  ok(cfgKey.body.mailEnabled === true, '发信域名有默认值，不需再配 RESEND_FROM')
 
   console.log(fail === 0 ? '\n同步核心全部通过 ✅' : `\n${fail} 项失败 ❌`)
   process.exit(fail ? 1 : 0)

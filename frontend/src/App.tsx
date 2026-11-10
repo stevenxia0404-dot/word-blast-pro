@@ -6,8 +6,7 @@ import { useSpellEngine } from './hooks/useSpellEngine'
 import { useGameProgress } from './hooks/useGameProgress'
 import { useCustomVocab } from './hooks/useCustomVocab'
 import { spokenTotal, loadModuleProgress } from './hooks/useSpokenRecords'
-import { downloadCsvTemplate } from './config/wordParser'
-import { preloadVoices, unlockAudio, speakWord, stopNeural } from './hooks/useAudio'
+import { preloadVoices, unlockAudio, speakWord, stopNeural, prefetchNeural } from './hooks/useAudio'
 import { HomeScreen } from './components/HomeScreen'
 import { ScoreBoard } from './components/ScoreBoard'
 import { GameCanvas } from './components/GameCanvas'
@@ -32,7 +31,7 @@ function App() {
   const { canvasRef, setupCanvas, initGame, startRender, stopRender, handleTap } = useGameEngine()
   const { state: spellState, initSpell, tapCandidate, tapSlot, revealHelp } = useSpellEngine()
   const {
-    customVocab, customLevels, hasCustom, groups,
+    customVocab, customLevels, groups,
     importVocab, deleteGroup, clearAllVocab,
     renameGroup, updateGroupVocab, addWordToGroup, removeWordFromGroup,
   } = useCustomVocab()
@@ -67,6 +66,11 @@ function App() {
   const subsections = resolveSubsections(level, activeVocab)
   const currentSub = subsections[prog.subsectionIndex]
   const levelVocab = level ? level.wordIds.map(id => activeVocab.find(v => v.id === id)!).filter(Boolean) : []
+
+  /* 音频预热：本关词条的 Ana mp3 提前进 HTTP 缓存，配对/拼写完成的播报不再等首次加载 */
+  useEffect(() => {
+    prefetchNeural(levelVocab.map(v => v.en))
+  }, [levelVocab])
 
   /* ── 进入闯关：三条路径（看证书 / 继续 / 新开一局） ── */
   const startBlast = useCallback(() => {
@@ -297,7 +301,6 @@ function App() {
           blastScore={prog.totalScore}
           spokenScore={spokenTotal()}
           title={getTitle(prog.totalScore, spokenTotal())}
-          hasCustomVocab={hasCustom}
           progress={progress}
           demo={demo}
           syncSigned={sync.signed}
@@ -305,11 +308,8 @@ function App() {
           onStartRepeat={() => setModule('repeat')}
           onStartDialogue={() => setModule('dialogue')}
           onPreviewCertificate={() => setModule('certificate')}
-          onOpenImport={() => setShowWordImport(true)}
-          onDownloadTemplate={downloadCsvTemplate}
           onOpenSync={() => setPanel('sync')}
           onOpenParent={() => setPanel('parent')}
-          onOpenReport={() => setPanel('report')}
         />
       )}
 

@@ -8,7 +8,7 @@ import { DIALOGUES } from '../config/dialogues'
 import type { DialogueRound } from '../config/dialogues'
 import {
   speakDialogue, stopNeural, playRecordingUrl, playSoftTone,
-  preloadVoices, unlockAudio,
+  preloadVoices, unlockAudio, prefetchNeural,
 } from '../hooks/useAudio'
 import { useRecorder, isRestrictedWebView, recordingSupport } from '../hooks/useRecorder'
 import { recordDialogue, loadDialogue, loadModuleProgress } from '../hooks/useSpokenRecords'
@@ -53,6 +53,11 @@ export function DialogueModule({ onExit }: Props) {
   const restricted = useMemo(() => isRestrictedWebView(), [])
   const recSupport = useMemo(() => recordingSupport(), [])
   const badgeAtStart = useRef(loadModuleProgress(false).dialogueDone)
+
+  /* 进入模块：把本轮 cue / reply 的 Emma 示范音提前拉进缓存 */
+  useEffect(() => {
+    prefetchNeural(queue.flatMap(r => [r.cue, r.reply]), 'emma')
+  }, [queue])
 
   const round = queue[idx]
 

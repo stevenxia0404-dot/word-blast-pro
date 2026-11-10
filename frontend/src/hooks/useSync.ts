@@ -1,5 +1,5 @@
 /* useSync.ts — 同步状态机
- * 登录：邮箱验证码（配了 Resend 时）/ 同步码（没配邮件服务时的降级路径）
+ * 登录：只用邮箱验证码（v3.4 起同步码已下线，失败无旁路）
  * 同步：登录后先推一次，之后每 15s 比对本地指纹，变化防抖 2s 再推；
  *       切后台立即推。断网静默失败，本地数据一丝不动。
  * 冲突：服务端 version 乐观锁返回 409 → 拿新版本再合并一次，用户无感。
@@ -17,7 +17,6 @@ const META_KEY = 'wordblast_sync_meta_v1'
 
 export interface SyncMeta {
   email?: string | null
-  recoveryCode?: string
   version: number
   lastSyncAt: number
   userId?: string
@@ -34,7 +33,6 @@ function readMeta(): SyncMeta {
       version: Number(m.version) || 0,
       lastSyncAt: Number(m.lastSyncAt) || 0,
       email: m.email ?? null,
-      recoveryCode: m.recoveryCode,
       userId: m.userId,
     }
   } catch { return { version: 0, lastSyncAt: 0 } }
@@ -47,7 +45,6 @@ function saveMeta(m: SyncMeta) {
 export interface SyncApi {
   signed: boolean
   email: string | null
-  recoveryCode: string
   busy: boolean
   message: string
   dirty: boolean
@@ -58,8 +55,6 @@ export interface SyncApi {
   refreshConfig: () => void
   sendCode: (email: string) => Promise<{ ok: boolean; devCode?: string; error?: string }>
   verifyCode: (email: string, code: string) => Promise<boolean>
-  createSpace: () => Promise<boolean>
-  claim: (code: string) => Promise<boolean>
   syncNow: (manual?: boolean) => Promise<boolean>
   signOut: () => void
   clearCloud: () => Promise<boolean>
@@ -111,7 +106,7 @@ export function useSync(): SyncApi {
     return last
   }, [])
 
-  /** 探测服务端能力：只在打开同步面板时调；拿不到就当没有邮件服务，同步码始终可用 */
+  /** 探测服务端能力：只在打开同步面板时调，首页不做无谓请求 */
   const refreshConfig = useCallback(() => {
     void call('config').then(r => {
       if (r.status === 200) {
@@ -157,30 +152,8 @@ export function useSync(): SyncApi {
     return false
   }, [call, persistLogin])
 
-  const createSpace = useCallback(async () => {
-    setBusy(true)
-    const r = await call('space', 'POST')
-    setBusy(false)
-    if (r.status === 200 && r.body.token) {
-      persistLogin(r.body, { recoveryCode: r.body.recoveryCode })
-      setMessage('同步空间已创建 · 请抄下同步码')
-      return true
-    }
-    setMessage(r.body?.error || '创建失败')
-    return false
-  }, [call, persistLogin])
-
-  const claim = useCallback(async (code: string) => {
-    setBusy(true)
-    const r = await call('claim', 'POST', { recoveryCode: code })
-    setBusy(false)
-    if (r.status === 200 && r.body.token) { persistLogin(r.body); return true }
-    setMessage(r.body?.error || '同步码不正确')
-    return false
-  }, [call, persistLogin])
-
   const syncNow = useCallback(async (manual = false): Promise<boolean> => {
-    if (!tokenRef.current) { setMessage('请先登录或创建同步空间'); return false }
+    if (!tokenRef.current) { setMessage('请先登录'); return false }
     setBusy(true)
     try {
       const local = collectLocalData()
@@ -271,12 +244,11 @@ export function useSync(): SyncApi {
   return {
     signed: !!token,
     email: meta.email ?? null,
-    recoveryCode: meta.recoveryCode ?? '',
     busy, message, dirty,
     lastSyncAt: meta.lastSyncAt,
     mailEnabled: cfg.mailEnabled,
     devMode: cfg.devMode,
     refreshConfig,
-    sendCode, verifyCode, createSpace, claim, syncNow, signOut, clearCloud,
+    sendCode, verifyCode, syncNow, signOut, clearCloud,
   }
 }

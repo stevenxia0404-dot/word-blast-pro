@@ -32,7 +32,7 @@ const TEMPLATE = `序号,英文单词,短语例句,中文翻译
   page.on('pageerror', e => errors.push('pageerror: ' + e.message))
 
   await ctx.addInitScript(() => {
-    try { localStorage.setItem('wordblast_banner_v2', 'v3.3') } catch {}
+    try { localStorage.setItem('wordblast_banner_v2', 'v3.4') } catch {}
   })
   await page.goto(BASE, { waitUntil: 'domcontentloaded' })
   await page.evaluate(() => {
@@ -45,6 +45,8 @@ const TEMPLATE = `序号,英文单词,短语例句,中文翻译
   await page.waitForTimeout(1200)
 
   console.log('\n[1] 打开导入弹窗')
+  await page.getByRole('button', { name: /家长区/ }).click()
+  await page.waitForTimeout(350)
   await page.getByText('导入课本单词').click()
   await page.waitForTimeout(600)
   ok(await page.getByText('自定义词库').count() > 0, '导入弹窗已打开')
@@ -168,8 +170,11 @@ const TEMPLATE = `序号,英文单词,短语例句,中文翻译
   await page.waitForTimeout(400)
   await page.getByText('取消').click()
   await page.waitForTimeout(500)
-  const homeText = await page.locator('body').innerText()
-  ok(homeText.includes('管理课本单词') || homeText.includes('导入课本单词'), '首页导入入口文案随状态切换')
+  await page.getByRole('button', { name: /家长区/ }).click()
+  await page.waitForTimeout(350)
+  const parentText = await page.locator('body').innerText()
+  ok(parentText.includes('导入课本单词') && parentText.includes('下载模板') && parentText.includes('学习报告'),
+    '三个工具都在家长区里')
 
   console.log('\n页面错误：', errors.length ? errors.slice(0, 3) : '无 ✅')
   console.log(fail === 0 ? '\n全部通过 ✅' : `\n${fail} 项失败 ❌`)

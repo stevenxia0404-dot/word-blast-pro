@@ -84,9 +84,10 @@ export function GuidePage({ onClose }: Props) {
         </Section>
 
         <Section emoji="☁️" title="跨设备同步（已上线）">
-          <p>首页点「☁️ 跨设备同步」，用<strong>同步码</strong>或<strong>邮箱验证码</strong>登录，多台设备就能共享进度、积分、词库和跟读记录。</p>
-          <p>· 第一台设备点「创建同步空间」，抄下 20 位同步码</p>
-          <p>· 另一台设备选「已有同步码？加入」，粘贴即可</p>
+          <p>首页点「☁️ 跨设备同步」，用<strong>家长邮箱收验证码</strong>登录，多台设备就能共享进度、积分、词库和跟读记录。</p>
+          <p>· 输家长邮箱 → 收 6 位验证码 → 登录（5 分钟内有效，用完即失效）</p>
+          <p>· 另一台设备输<strong>同一个邮箱</strong>再收一次验证码，自动看到同一份进度</p>
+          <p>· 不用记任何同步码、不用抄字符串</p>
           <p>· 登录后每 15 秒自动检查改动，切到后台也会补传一次</p>
           <p>· <strong>不上传孩子的录音</strong>，录音只在设备内存里当场回放</p>
           <p className="text-gray-400">没登录、断网也完全能用 —— 同步是增强，不是门槛。</p>
@@ -152,7 +153,7 @@ export function GuidePage({ onClose }: Props) {
 
         <Section emoji="💾" title="数据存储">
           <p>学习进度、口语分、跟读记录、对话记录和词库都保存在<strong>当前设备的浏览器</strong>中；开启同步后才会上传这 5 类学习记录。</p>
-          <p className="text-gray-500">在首页「☁️ 跨设备同步」或家长区开启同步，多台设备共享进度。</p>
+          <p className="text-gray-500">在首页「☁️ 跨设备同步」或家长区开启同步；导入课本单词、下载模板、学习报告都在「👨‍👩‍👧 家长区」里。</p>
           <p className="text-amber-700">⚠️ 不开同步时，换设备或换浏览器需要重新导入词库；开同步后自动带过去。</p>
         </Section>
 
@@ -180,7 +181,7 @@ export function GuidePage({ onClose }: Props) {
       </div>
 
       <div className="h-8" />
-      <p className="text-center text-white/60 text-xs pb-6">v3.3</p>
+      <p className="text-center text-white/60 text-xs pb-6">v3.4</p>
     </div>
   )
 }

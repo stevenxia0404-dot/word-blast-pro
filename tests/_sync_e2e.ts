@@ -1,6 +1,6 @@
-/* _sync_e2e.ts — 同步端到端：真实浏览器 + 真实核心逻辑（memoryStore）
- * Playwright 拦截 /sync-api/*，背后跑的就是线上那份 _core.js，不是假响应。
- */
+/* _sync_e2e.ts — v3.4 纯邮箱双设备端到端（真实浏览器 + 真实 _core.js/memoryStore）
+ * B 设备的时间线整体前移 62 秒，用来跨过「同一邮箱 60 秒只能发一次」的真实限流，
+ * 不改产品逻辑、不造假响应。 */
 import { handleRequest, memoryStore } from '../functions/api/sync/_core.js'
 
 function loadPlaywright() {
@@ -21,8 +21,9 @@ const ok = (c: any, l: string, e = '') => {
 
 const store: any = memoryStore()
 const env: any = { ALLOW_DEV_CODE: '1' }
+const EMAIL = 'parent@example.com'
 
-async function attach(page: any) {
+async function attach(page: any, offset = 0) {
   await page.route('**/sync-api/*', async (route: any) => {
     const req = route.request()
     const u = new URL(req.url())
@@ -37,7 +38,7 @@ async function attach(page: any) {
       body,
       headers: { authorization: req.headers()['authorization'] || '', ip: 'e2e' },
       store,
-      now: Date.now(),
+      now: Date.now() + offset,
     })
     await route.fulfill({
       status: out.status,
@@ -48,14 +49,26 @@ async function attach(page: any) {
   })
 }
 
+async function login(page: any) {
+  await page.getByRole('button', { name: /跨设备同步/ }).click()
+  await page.waitForTimeout(350)
+  await page.getByRole('textbox', { name: '邮箱' }).fill(EMAIL)
+  await page.getByRole('button', { name: /发送验证码/ }).click()
+  await page.waitForTimeout(400)
+  const filled = await page.getByRole('textbox', { name: '验证码' }).inputValue()
+  ok(/^\d{6}$/.test(filled), 'dev 模式验证码自动填入', filled)
+  await page.getByRole('button', { name: /登录并开启同步/ }).click()
+  await page.waitForTimeout(1700)
+}
+
 ;(async () => {
   const browser = await chromium.launch({ executablePath: CHROME })
 
-  console.log('\n[1] 设备 A：造一份本机进度 → 创建同步空间')
+  console.log('\n[1] 设备 A：造一份本机进度 → 邮箱验证码登录')
   const ctxA = await browser.newContext({ viewport: { width: 390, height: 844 } })
   await ctxA.addInitScript(() => {
     try {
-      localStorage.setItem('wordblast_banner_v2', 'v3.3')
+      localStorage.setItem('wordblast_banner_v2', 'v3.4')
       localStorage.setItem('wordblast_save_v1', JSON.stringify({
         version: 2, phase: 'playing', levelIndex: 2, subsectionIndex: 0,
         totalScore: 640, combo: 0,
@@ -80,34 +93,26 @@ async function attach(page: any) {
   pageA.on('pageerror', (e: any) => errsA.push(e.message))
   await pageA.goto(BASE, { waitUntil: 'domcontentloaded' })
   await pageA.waitForTimeout(700)
-  await pageA.getByRole('button', { name: /跨设备同步/ }).click()
-  await pageA.waitForTimeout(400)
-  await pageA.getByRole('button', { name: /创建同步空间/ }).click()
-  await pageA.waitForTimeout(1600)
-  const code = (await pageA.locator('[data-testid="sync-code"]').innerText()).trim()
-  ok(/^[A-Z0-9]{20}$/.test(code), '创建后展示 20 位同步码', code)
+  await login(pageA)
   const textA = await pageA.locator('body').innerText()
   ok(textA.includes('已同步'), 'A 设备自动完成首次同步', textA.slice(-200))
+  ok(textA.includes(EMAIL), 'A 设备显示已登录邮箱')
   ok(errsA.length === 0, 'A 设备无页面错误', errsA.join(' | '))
 
-  console.log('\n[2] 设备 B：输入同步码加入 → 拉到 A 的全部数据')
+  console.log('\n[2] 设备 B：输同一个邮箱 → 拉到 A 的全部数据')
   const ctxB = await browser.newContext({ viewport: { width: 390, height: 844 } })
   await ctxB.addInitScript(() => {
-    try { localStorage.setItem('wordblast_banner_v2', 'v3.3') } catch {}
+    try { localStorage.setItem('wordblast_banner_v2', 'v3.4') } catch {}
   })
   const pageB: any = await ctxB.newPage()
-  await attach(pageB)
+  await attach(pageB, 62000)
   const errsB: string[] = []
   pageB.on('pageerror', (e: any) => errsB.push(e.message))
   await pageB.goto(BASE, { waitUntil: 'domcontentloaded' })
   await pageB.waitForTimeout(600)
-  await pageB.getByRole('button', { name: /跨设备同步/ }).click()
-  await pageB.waitForTimeout(350)
-  await pageB.getByRole('textbox', { name: '同步码' }).fill(code.toLowerCase())
-  await pageB.getByRole('button', { name: /加入同步空间/ }).click()
-  await pageB.waitForTimeout(1800)
+  await login(pageB)
   const textB = await pageB.locator('body').innerText()
-  ok(textB.includes('已同步'), 'B 设备加入后自动同步', textB.slice(-200))
+  ok(textB.includes('已同步'), 'B 设备登录后自动同步', textB.slice(-200))
   const pulled = await pageB.evaluate(() => ({
     score: JSON.parse(localStorage.getItem('wordblast_spoken_score_v1') || '{}').score,
     levelIndex: JSON.parse(localStorage.getItem('wordblast_save_v1') || '{}').levelIndex,
@@ -130,7 +135,7 @@ async function attach(page: any) {
   const cloud = await handleRequest(env, {
     method: 'GET', path: 'data', body: {},
     headers: { authorization: 'Bearer ' + (await pageB.evaluate(() => localStorage.getItem('wordblast_sync_token_v1') || '')) },
-    store, now: Date.now(),
+    store, now: Date.now() + 62000,
   })
   ok((cloud as any).body.data.spokenScore.score === 260, 'B 的新分数写入云端', JSON.stringify((cloud as any).body.data.spokenScore))
   ok((cloud as any).body.data.save.totalScore === 640, 'A 的闯关分没有被 B 覆盖')
@@ -142,8 +147,6 @@ async function attach(page: any) {
   await pageB.waitForTimeout(350)
   const parent = await pageB.locator('body').innerText()
   ok(parent.includes('已开启') && parent.includes('260'), '家长区显示同步状态与真实口语分', parent.slice(0, 260))
-  await pageB.getByRole('button', { name: '关闭' }).click()
-  await pageB.waitForTimeout(250)
   await pageB.getByRole('button', { name: /学习报告/ }).click()
   await pageB.waitForTimeout(350)
   const report = await pageB.locator('body').innerText()
@@ -156,7 +159,7 @@ async function attach(page: any) {
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 MicroMessenger/8.0.44',
   })
   await ctxC.addInitScript(() => {
-    try { localStorage.setItem('wordblast_banner_v2', 'v3.3') } catch {}
+    try { localStorage.setItem('wordblast_banner_v2', 'v3.4') } catch {}
   })
   const pageC: any = await ctxC.newPage()
   await attach(pageC)

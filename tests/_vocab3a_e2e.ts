@@ -34,7 +34,7 @@ const OLD_VOCAB = ['robot', 'music', 'lion', 'mouse', 'share', 'mother']
   const errors = []
   page.on('pageerror', e => errors.push(e.message))
   await ctx.addInitScript(() => {
-    try { localStorage.setItem('wordblast_banner_v2', 'v3.3') } catch {}
+    try { localStorage.setItem('wordblast_banner_v2', 'v3.4') } catch {}
   })
   await page.goto(BASE, { waitUntil: 'domcontentloaded' })
   await page.evaluate(() => {

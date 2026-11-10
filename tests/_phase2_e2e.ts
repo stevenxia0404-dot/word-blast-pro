@@ -25,7 +25,7 @@ const ok = (c: unknown, label: string) => {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
   const page = await ctx.newPage()
   await ctx.addInitScript(() => {
-    try { localStorage.setItem('wordblast_banner_v2', 'v3.3') } catch {}
+    try { localStorage.setItem('wordblast_banner_v2', 'v3.4') } catch {}
   })
   const errors: string[] = []
   // 只收应用自身报错：Cloudflare RUM / 第三方资源在 localhost 下的 CORS 噪音不算回归
@@ -43,7 +43,7 @@ const ok = (c: unknown, label: string) => {
   ok(home.includes('一问一答'), '对话卡副标题是「一问一答」')
   ok(home.includes('三枚勋章全亮'), '首页显示勋章/大满贯提示')
   ok((await page.locator('[aria-disabled="true"]').count()) === 0, '没有置灰的模块卡')
-  ok(home.includes('v3.3'), '首页版本号 v3.3')
+  ok(home.includes('v3.4'), '首页版本号 v3.4')
 
   console.log('\n[2] 对话模块：听 → 答 → 参考答案 → 返回')
   await page.getByText('对话练习').first().click()

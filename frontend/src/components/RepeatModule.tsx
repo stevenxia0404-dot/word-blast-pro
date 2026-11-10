@@ -8,7 +8,7 @@ import type { VocabItem } from '../config/gameConfig'
 import { getExampleSentence } from '../config/gameConfig'
 import {
   speakNeural, stopNeural, playRecordingUrl, playSoftTone,
-  preloadVoices, unlockAudio,
+  preloadVoices, unlockAudio, prefetchNeural,
 } from '../hooks/useAudio'
 import { useRecorder, isRestrictedWebView, recordingSupport } from '../hooks/useRecorder'
 import { recordSpoken, loadSpoken } from '../hooks/useSpokenRecords'
@@ -70,6 +70,11 @@ export function RepeatModule({ vocab, onExit }: Props) {
   const { recState, recordingUrl, start, stop, cancel } = useRecorder()
   const restricted = useMemo(() => isRestrictedWebView(), [])
   const recSupport = useMemo(() => recordingSupport(), [])
+
+  /* 进入模块：把这一组的示范音频提前拉进缓存，点「听」不再等首次加载 */
+  useEffect(() => {
+    prefetchNeural(queue.map(v => v.en))
+  }, [queue])
 
   const item = queue[idx]
   const sentence = item ? getExampleSentence(item) : ''

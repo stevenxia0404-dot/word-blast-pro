@@ -28,7 +28,7 @@ const ok = (c, label, extra = '') => {
   const page = await ctx.newPage()
   // 跳过首次启动的版本更新弹窗（它 z-[300] 挡住点击；v3.0 文案在 L5 处理）
   await ctx.addInitScript(() => {
-    try { localStorage.setItem('wordblast_banner_v2', 'v3.3') } catch {}
+    try { localStorage.setItem('wordblast_banner_v2', 'v3.4') } catch {}
   })
   const errors = []
   page.on('pageerror', e => errors.push('pageerror: ' + e.message))
@@ -49,8 +49,9 @@ const ok = (c, label, extra = '') => {
   ok(await page.getByText('跟读练习', { exact: false }).count() > 0, '跟读卡片存在')
   ok(await page.getByText('对话练习', { exact: false }).count() > 0, '对话卡片存在')
   ok(await page.getByText('一问一答').count() > 0, '对话卡已点亮（不再置灰）')
-  ok(await page.getByText('下载模板').count() > 0, '导入行有「下载模板」')
-  ok(await page.getByText('导入课本单词').count() > 0, '导入行有「导入课本单词」')
+  ok(await page.getByText('下载模板').count() === 0, '首页不再放「下载模板」')
+  ok(await page.getByText('导入课本单词').count() === 0, '首页不再放「导入课本单词」')
+  ok(await page.getByRole('button', { name: /家长区/ }).count() === 1, '首页只留「家长区」一个工具入口')
 
   // 对话卡已点亮：点击应进入对话模块
   ok(await page.locator('[aria-disabled="true"]').count() === 0, '首页无置灰模块卡')

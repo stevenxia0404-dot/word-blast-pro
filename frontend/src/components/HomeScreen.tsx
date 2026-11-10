@@ -1,6 +1,7 @@
 /* HomeScreen.tsx — 模块首页
  * 三入口：闯关练习 / 跟读练习 / 对话练习（二期已点亮）
- * 底部：成绩行（闯关分 + 口语分 + 称号）+ 三枚模块勋章 + 导入行 + 功能区
+ * 底部：成绩行 + 三枚模块勋章 + 两个入口（跨设备同步 / 家长区）
+ * v3.4：导入课本单词、下载模板、学习报告统一收进家长区，首页保持干净
  * 恒为第一屏 —— 与闯关进度解耦，老用户刷新也不会找不到入口
  */
 import type { TitleDef } from '../config/gameConfig'
@@ -12,7 +13,6 @@ interface Props {
   blastScore: number
   spokenScore: number
   title: TitleDef
-  hasCustomVocab: boolean
   progress: ModuleProgress
   /** 同步是否已开启，底部提示随之变化 */
   syncSigned?: boolean
@@ -22,11 +22,8 @@ interface Props {
   onStartRepeat: () => void
   onStartDialogue: () => void
   onPreviewCertificate?: () => void
-  onOpenImport: () => void
-  onDownloadTemplate: () => void
   onOpenSync: () => void
   onOpenParent: () => void
-  onOpenReport: () => void
 }
 
 const BLAST_SUBTITLE = {
@@ -37,9 +34,9 @@ const BLAST_SUBTITLE = {
 
 export function HomeScreen({
   blastAction, blastLevel, blastScore, spokenScore, title,
-  hasCustomVocab, progress, demo, syncSigned,
+  progress, demo, syncSigned,
   onStartBlast, onStartRepeat, onStartDialogue, onPreviewCertificate,
-  onOpenImport, onDownloadTemplate, onOpenSync, onOpenParent, onOpenReport,
+  onOpenSync, onOpenParent,
 }: Props) {
   const badges = [
     { label: '闯关', done: progress.blastDone },
@@ -129,25 +126,8 @@ export function HomeScreen({
             </button>
           )}
 
-          {/* ── 导入行 ── */}
-          <div className="w-full flex gap-2 mb-2">
-            <button
-              type="button"
-              onClick={onOpenImport}
-              className="flex-1 bg-white hover:bg-lime-50 text-lime-700 font-bold text-xs sm:text-sm py-2.5 rounded-2xl border-2 border-lime-200 transition-all active:scale-95"
-            >
-              📂 {hasCustomVocab ? '管理课本单词' : '导入课本单词'}
-            </button>
-            <button
-              type="button"
-              onClick={onDownloadTemplate}
-              className="flex-1 bg-white hover:bg-lime-50 text-lime-700 font-bold text-xs sm:text-sm py-2.5 rounded-2xl border-2 border-lime-200 transition-all active:scale-95"
-            >
-              ⬇️ 下载模板
-            </button>
-          </div>
-          {/* ── 功能区：同步 / 家长区 / 学习报告 ── */}
-          <div className="w-full grid grid-cols-3 gap-2 mb-2">
+          {/* ── 两个入口：同步 / 家长区（导入、模板、报告都在家长区里） ── */}
+          <div className="w-full grid grid-cols-2 gap-2 mb-2">
             <button
               type="button"
               onClick={onOpenSync}
@@ -164,20 +144,12 @@ export function HomeScreen({
               <span className="text-base leading-none">👨‍👩‍👧</span>
               <span>家长区</span>
             </button>
-            <button
-              type="button"
-              onClick={onOpenReport}
-              className="flex flex-col items-center justify-center gap-0.5 bg-white hover:bg-amber-50 text-amber-700 font-bold text-[11px] py-2 rounded-2xl border-2 border-amber-100 transition-all active:scale-95"
-            >
-              <span className="text-base leading-none">📊</span>
-              <span>学习报告</span>
-            </button>
           </div>
           <p className="text-[11px] text-lime-600 mb-1">
             {syncSigned ? '（☁️ 同步已开启 · 进度与词库多设备共享）' : '（本机离线可用 · 登录后自动跨设备同步）'}
           </p>
 
-          <p className="text-[11px] text-emerald-400 mt-1">v3.3</p>
+          <p className="text-[11px] text-emerald-400 mt-1">v3.4</p>
         </div>
       </div>
     </div>

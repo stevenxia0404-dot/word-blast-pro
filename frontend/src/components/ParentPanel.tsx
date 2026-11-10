@@ -1,10 +1,11 @@
 /* ParentPanel.tsx — 家长区（真实实现）
- * 给家长的四件事：看同步状态、管词库、看学习报告、导出/清理本机数据。
+ * v3.4：导入课本单词、下载模板、学习报告三个工具统一收进这里，首页只留两个按钮。
  * 所有操作都只碰本机数据，删除前二次确认。
  */
 import { useState } from 'react'
 import type { SyncApi } from '../hooks/useSync'
 import { SYNC_KEYS, collectLocalData, exportStudyJson, downloadText } from '../config/syncSchema'
+import { downloadCsvTemplate } from '../config/wordParser'
 
 interface Props {
   sync: SyncApi
@@ -51,12 +52,16 @@ export function ParentPanel({ sync, onOpenSync, onOpenImport, onOpenReport, onCl
           <button type="button" onClick={onOpenSync} className={CARD + ' border-sky-100 hover:bg-sky-50'}>
             <p className="font-bold text-sm text-sky-700">☁️ 跨设备同步</p>
             <p className="text-[11px] text-gray-500 mt-0.5">
-              {sync.signed ? `已开启 · ${sync.email || '同步空间'} · ${sync.dirty ? '有改动待同步' : '已同步'}` : '未开启 · 点击用同步码或邮箱登录'}
+              {sync.signed ? `已开启 · ${sync.email || '家长邮箱'} · ${sync.dirty ? '有改动待同步' : '已同步'}` : '未开启 · 用家长邮箱收验证码登录'}
             </p>
           </button>
           <button type="button" onClick={onOpenImport} className={CARD + ' border-lime-100 hover:bg-lime-50'}>
-            <p className="font-bold text-sm text-lime-700">📂 课本单词 / 导入记录</p>
-            <p className="text-[11px] text-gray-500 mt-0.5">下载模板、上传资料，查看和编辑历史导入内容</p>
+            <p className="font-bold text-sm text-lime-700">📂 导入课本单词 / 导入记录</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">上传资料，查看和编辑历史导入内容</p>
+          </button>
+          <button type="button" onClick={() => downloadCsvTemplate()} className={CARD + ' border-emerald-100 hover:bg-emerald-50'}>
+            <p className="font-bold text-sm text-emerald-700">⬇️ 下载模板</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">按「序号 / 英文单词 / 短语例句 / 中文翻译」整理资料</p>
           </button>
           <button type="button" onClick={onOpenReport} className={CARD + ' border-amber-100 hover:bg-amber-50'}>
             <p className="font-bold text-sm text-amber-700">📊 学习报告</p>
