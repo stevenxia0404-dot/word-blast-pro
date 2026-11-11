@@ -17,3 +17,4 @@ tools/_*.cjs
 # v3.4 音频回归构建产物
 tests/_audio_test.js
 tests/_audio_e2e.js
+tests/_sync_state_e2e.js

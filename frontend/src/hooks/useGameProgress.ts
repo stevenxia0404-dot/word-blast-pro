@@ -208,6 +208,45 @@ export function useGameProgress(customLevels?: LevelConfig[] | null) {
     })
   }, [phase, levelIndex, subsectionIndex, totalScore, combo, levelResults, subsectionScore, subsectionCorrect, subsectionAttempts])
 
+  /* ── 跨设备同步落地：把合并结果灌回 React state ──
+   * useSync 只写 localStorage 后派发 wordblast:sync-applied；不更新 state 的话，
+   * 首页分数会一直停在旧值（要手动刷新才看得见），下一次 auto-save 还会用旧 state
+   * 把刚拉回来的高分盖掉。只在「云端更靠前」时推进，绝不回退本机进度。
+   * phase 不动：避免在同步瞬间弹出关卡完成层 / 打断正在进行的练习。 */
+  useEffect(() => {
+    const onSyncApplied = () => {
+      const raw = readSaveRaw()
+      const remote = migrateSave(raw, {
+        totalLevels: activeLevels.length,
+        usingCustom: !!customLevels?.length,
+      })
+      if (!remote) return
+      setTotalScore(prev => Math.max(prev, remote.totalScore ?? 0))
+      setLevelIndex(prev => Math.max(prev, remote.levelIndex ?? 0))
+      setLevelResults(prev => {
+        if (!remote.levelResults.length) return prev
+        const next = prev.slice()
+        let changed = false
+        for (let i = 0; i < remote.levelResults.length; i++) {
+          const a = next[i], b = remote.levelResults[i]
+          if (!a) { next[i] = b; changed = true; continue }
+          const merged = {
+            stars: Math.max(a.stars, b.stars),
+            accuracy: Math.max(a.accuracy, b.accuracy),
+            score: Math.max(a.score, b.score),
+          }
+          if (merged.stars !== a.stars || merged.accuracy !== a.accuracy || merged.score !== a.score) {
+            next[i] = merged
+            changed = true
+          }
+        }
+        return changed ? next : prev
+      })
+    }
+    window.addEventListener('wordblast:sync-applied', onSyncApplied)
+    return () => window.removeEventListener('wordblast:sync-applied', onSyncApplied)
+  }, [activeLevels.length, !!customLevels?.length])
+
   const debug = {
     jumpToLevel: useCallback((idx: number) => {
       if (idx < 0 || idx >= activeLevels.length) return
