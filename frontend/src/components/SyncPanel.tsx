@@ -62,7 +62,7 @@ export function SyncPanel({ sync, onClose }: Props) {
             <button type="button" disabled={sync.busy} onClick={() => { void sync.syncNow(true) }} className={BTN + ' mb-2'}>
               🔄 立即同步
             </button>
-            <p className="text-[10px] text-gray-400 text-center mb-3">自动同步每 15 秒检查一次改动；手动同步后可刷新页面查看另一台设备的数据。</p>
+            <p className="text-[10px] text-gray-400 text-center mb-3">本机改动 15 秒内自动上传，云端更新每 30 秒自动拉取；切回页面或断网恢复会立即同步，其它设备的进度会自动出现，无需刷新。</p>
             <div className="grid grid-cols-2 gap-2">
               <button type="button" onClick={sync.signOut}
                 className="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs py-2.5 rounded-xl active:scale-95">退出同步</button>

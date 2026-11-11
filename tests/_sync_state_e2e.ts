@@ -3,8 +3,9 @@
  * useSync 把合并结果写进 localStorage 并派发 wordblast:sync-applied，
  * 但 useGameProgress 的 useState 仍停在 0，首页看不到、下次 auto-save 还会盖掉存档。
  */
-import { readFileSync, existsSync } from 'fs'
-const SRC = existsSync('src/hooks/useGameProgress.ts') ? 'src/hooks/useGameProgress.ts' : '../frontend/src/hooks/useGameProgress.ts'
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
+const SRC = resolve(__dirname, '../frontend/src/hooks/useGameProgress.ts')
 
 function loadPlaywright() {
   for (const c of ['playwright', process.env.PLAYWRIGHT_PATH,

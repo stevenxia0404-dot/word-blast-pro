@@ -1,7 +1,9 @@
 /* useSync.ts — 同步状态机
  * 登录：只用邮箱验证码（v3.4 起同步码已下线，失败无旁路）
- * 同步：登录后先推一次，之后每 15s 比对本地指纹，变化防抖 2s 再推；
- *       切后台立即推。断网静默失败，本地数据一丝不动。
+ * 上传：登录后先推一次，之后每 15s 比对本地指纹，变化防抖 2s 再推；
+ *       切后台立即推；同步失败每 15s 自动重试，联网恢复立即补传。
+ * 拉取：每 30s 探测云端 version（仅页面可见时），有新版就落地并即时刷新界面；
+ *       切回前台立即拉一次。本机有未推改动时改走合并提交，绝不覆盖刚打的分。
  * 冲突：服务端 version 乐观锁返回 409 → 拿新版本再合并一次，用户无感。
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -14,6 +16,8 @@ const API_BASES: string[] = import.meta.env.DEV
   : ['/api/sync', 'https://word-blast-api.boluomate.com/api/sync']
 const TOKEN_KEY = 'wordblast_sync_token_v1'
 const META_KEY = 'wordblast_sync_meta_v1'
+/** 云端探测间隔：无变化时只读 GET、零写入，不会两台设备互相把 version 越推越高 */
+const POLL_MS = 30_000
 
 export interface SyncMeta {
   email?: string | null
@@ -74,6 +78,9 @@ export function useSync(): SyncApi {
   const metaRef = useRef(meta); metaRef.current = meta
   const lastFp = useRef('')
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const syncingRef = useRef(false)
+  const pollingRef = useRef(false)
+  const failedRef = useRef(false)
 
   const call = useCallback(async (
     action: string, method = 'GET', body: unknown = {}, withAuth = false,
@@ -154,6 +161,8 @@ export function useSync(): SyncApi {
 
   const syncNow = useCallback(async (manual = false): Promise<boolean> => {
     if (!tokenRef.current) { setMessage('请先登录'); return false }
+    if (syncingRef.current) return false // 定时拉 / 防抖推 / 手动点同时到达时只跑一次
+    syncingRef.current = true
     setBusy(true)
     try {
       const local = collectLocalData()
@@ -165,12 +174,14 @@ export function useSync(): SyncApi {
       }
       if (r.status === 401) {
         setMessage('登录已过期，请重新登录')
+        failedRef.current = false // 过期重试无意义，等用户重新登录
         try { localStorage.removeItem(TOKEN_KEY) } catch { /* ignore */ }
         setToken('')
         return false
       }
       if (r.status !== 200 || !r.body.data) {
         setMessage(r.body?.error || '同步失败，本机数据已保留')
+        failedRef.current = true
         setDirty(true)
         return false
       }
@@ -179,18 +190,49 @@ export function useSync(): SyncApi {
       saveMeta(next)
       setMeta(next)
       lastFp.current = fingerprint(collectLocalData())
+      failedRef.current = false
       setDirty(false)
-      setMessage(manual ? '已同步 ✅ 刷新页面即可看到其它设备的进度' : '已同步')
+      setMessage(manual ? '已同步 ✅ 其它设备的进度会自动同步过来' : '已同步')
       window.dispatchEvent(new Event('wordblast:sync-applied'))
       return true
     } catch {
       setMessage('网络不可用，数据已留在本机，联网后自动重试')
+      failedRef.current = true
       setDirty(true)
       return false
     } finally {
+      syncingRef.current = false
       setBusy(false)
     }
   }, [call])
+
+  /** 定时探测云端版本：只读 GET。
+   *  · 本机有未推改动 / 上次同步失败 → 改走 syncNow 由服务端合并，绝不覆盖刚打的分；
+   *  · 本机干净且云端版本更新 → 直接落地 + 派发 sync-applied，界面当场刷新；
+   *  · 无变化 → 什么都不写，避免两台设备互相把 version 越推越高。 */
+  const pollRemote = useCallback(async (): Promise<void> => {
+    if (!tokenRef.current || pollingRef.current) return
+    if (document.visibilityState !== 'visible') return // 后台 / 锁屏不费流量
+    pollingRef.current = true
+    try {
+      const r = await call('data', 'GET', {}, true)
+      if (r.status !== 200 || !r.body || typeof r.body.version !== 'number') return
+      const fp = fingerprint(collectLocalData())
+      if (fp !== lastFp.current || failedRef.current) { void syncNow(false); return }
+      const remoteVersion = Number(r.body.version) || 0
+      if (remoteVersion <= metaRef.current.version) return
+      applyRemoteData(r.body.data)
+      const next: SyncMeta = { ...metaRef.current, version: remoteVersion, lastSyncAt: Date.now() }
+      saveMeta(next)
+      setMeta(next)
+      lastFp.current = fingerprint(collectLocalData())
+      setDirty(false)
+      setMessage('已同步')
+      window.dispatchEvent(new Event('wordblast:sync-applied'))
+    } finally {
+      pollingRef.current = false
+    }
+  }, [call, syncNow])
 
   const signOut = useCallback(() => {
     try {
@@ -201,6 +243,7 @@ export function useSync(): SyncApi {
     setMeta({ version: 0, lastSyncAt: 0 })
     setMessage('已退出同步，本机数据保留')
     setDirty(false)
+    failedRef.current = false
   }, [])
 
   const clearCloud = useCallback(async () => {
@@ -211,16 +254,18 @@ export function useSync(): SyncApi {
       const next: SyncMeta = { ...metaRef.current, version: 0, lastSyncAt: Date.now() }
       saveMeta(next); setMeta(next)
       setMessage('云端存档已清空，本机数据不受影响')
-      return true
+    } else {
+      setMessage(r.body?.error || '清空失败')
     }
-    setMessage(r.body?.error || '清空失败')
-    return false
+    return r.status === 200
   }, [call])
 
-  /* 自动同步：登录后立刻一次 + 本地指纹变化防抖 2s + 切后台立即推 */
+  /* 自动同步：登录后立刻一次 + 本地指纹变化防抖 2s + 切后台立即推；
+   * 每 30s 探测云端新版本，切回前台 / 断网恢复立即拉一次 */
   useEffect(() => {
     if (!token) return
     lastFp.current = fingerprint(collectLocalData())
+    failedRef.current = false
     void syncNow(false)
 
     const schedule = () => {
@@ -229,17 +274,28 @@ export function useSync(): SyncApi {
     }
     const tick = () => {
       const fp = fingerprint(collectLocalData())
-      if (fp !== lastFp.current) { setDirty(true); schedule() }
+      if (fp !== lastFp.current || failedRef.current) { setDirty(true); schedule() }
     }
     const iv = setInterval(tick, 15000)
-    const onVis = () => { if (document.visibilityState === 'hidden') tick() }
+    const pollIv = setInterval(() => { void pollRemote() }, POLL_MS)
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') tick()
+      else void pollRemote()
+    }
+    const onOnline = () => {
+      if (failedRef.current) tick() // 之前断网没传上去的，联网立刻补
+      void pollRemote()
+    }
     document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('online', onOnline)
     return () => {
       clearInterval(iv)
+      clearInterval(pollIv)
       if (debounce.current) clearTimeout(debounce.current)
       document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('online', onOnline)
     }
-  }, [token, syncNow])
+  }, [token, syncNow, pollRemote])
 
   return {
     signed: !!token,
