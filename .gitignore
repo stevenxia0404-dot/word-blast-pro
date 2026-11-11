@@ -18,3 +18,7 @@ tools/_*.cjs
 tests/_audio_test.js
 tests/_audio_e2e.js
 tests/_sync_state_e2e.js
+
+# dev-frame 标注收件（本机临时数据，不进仓库）
+/.workbuddy/marks.json
+/.workbuddy/marks.jsonl

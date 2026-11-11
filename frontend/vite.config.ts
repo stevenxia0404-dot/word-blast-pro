@@ -1,10 +1,77 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+/**
+ * dev-frame 标注收件通道 —— 仅 dev 生效（apply: 'serve'，生产构建零痕迹）
+ *
+ * 以前靠 navigator.clipboard 往外送，但内嵌预览是 iframe，剪贴板权限经常被拒，
+ * 而且 writeText 是异步的，try/catch 抓不到失败，界面还显示「已复制」的假成功。
+ * 现在改成同源 POST 直接落盘：
+ *   POST /api/dev-marks  body = Mark[] → .workbuddy/marks.json（最新快照）
+ *                                     + .workbuddy/marks.jsonl（每次一行，永不丢）
+ * 标完读文件即可，Steven 不用复制粘贴、也不用点任何按钮。
+ */
+function devMarksReceiver(): Plugin {
+  return {
+    name: 'wb-dev-marks',
+    apply: 'serve',
+    configureServer(server) {
+      const dir = resolve(server.config.root, '..', '.workbuddy')
+      const snap = resolve(dir, 'marks.json')
+      const log = resolve(dir, 'marks.jsonl')
+
+      server.middlewares.use('/api/dev-marks', (req, res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*')
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+
+        if (req.method === 'OPTIONS') { res.statusCode = 204; res.end(); return }
+
+        if (req.method === 'GET') {
+          try {
+            res.end(existsSync(snap) ? readFileSync(snap, 'utf8') : JSON.stringify({ marks: [], count: 0 }))
+          } catch {
+            res.end(JSON.stringify({ marks: [], count: 0 }))
+          }
+          return
+        }
+
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end(JSON.stringify({ ok: false, error: 'method not allowed' }))
+          return
+        }
+
+        let raw = ''
+        req.on('data', (c: Buffer) => {
+          raw += c.toString()
+          if (raw.length > 4_000_000) req.destroy()
+        })
+        req.on('end', () => {
+          try {
+            const marks = JSON.parse(raw || '[]')
+            if (!Array.isArray(marks)) throw new Error('expect an array of marks')
+            mkdirSync(dir, { recursive: true })
+            const ts = new Date().toISOString()
+            writeFileSync(snap, JSON.stringify({ updatedAt: ts, count: marks.length, marks }, null, 2), 'utf8')
+            appendFileSync(log, JSON.stringify({ ts, count: marks.length, marks }) + '\n', 'utf8')
+            res.end(JSON.stringify({ ok: true, count: marks.length, savedTo: snap }))
+          } catch (e) {
+            res.statusCode = 400
+            res.end(JSON.stringify({ ok: false, error: String(e) }))
+          }
+        })
+      })
+    },
+  }
+}
 
 export default defineConfig({
-  // dev-frame 标注器收件通道：同源 /api/dev-marks → 本机收件服务（仅 dev 生效，生产构建不受影响）
   server: {
     proxy: {
       // 本地同步 API（wrangler pages dev 起在 8788 时可直连；E2E 用 Playwright 拦截）
@@ -13,14 +80,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: p => p.replace(/^\/sync-api/, '/api/sync'),
       },
-      '/api/dev-marks': {
-        target: 'http://127.0.0.1:8787',
-        changeOrigin: true,
-        rewrite: p => p.replace(/^\/api\/dev-marks/, '/marks'),
-      },
     },
   },
   plugins: [
+    devMarksReceiver(),
     react(),
     tailwindcss(),
     VitePWA({

@@ -375,6 +375,25 @@ export default function DevFrame() {
     return () => clearInterval(t);
   }, []);
 
+  // 标注自动送达：每标一条就写进本机文件，不用点按钮、不用复制粘贴。
+  // 首帧跳过 —— 刷新画布时别把还没读过的记录冲掉；之后任何变化（含清空）都同步。
+  const [autoSend, setAutoSend] = useState<'idle' | 'ok' | 'fail'>('idle');
+  const firstMarksRef = useRef(true);
+  useEffect(() => {
+    if (firstMarksRef.current) { firstMarksRef.current = false; return; }
+    const t = setTimeout(() => {
+      void fetch(MARK_RECEIVER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(marks),
+      }).then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        setAutoSend('ok');
+      }).catch(() => setAutoSend('fail'));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [marks]);
+
   // app 里的标注器开关状态 —— 画布得知道，才能把按钮画对
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
@@ -654,6 +673,7 @@ export default function DevFrame() {
           onClear={clearMarks}
           onDeleteMark={deleteMark}
           onClose={() => setDrawerOpen(false)}
+          autoSend={autoSend}
         />
       )}
 
@@ -694,10 +714,11 @@ export default function DevFrame() {
    ================================================================== */
 
 function MarkDrawer({
-  marks, inspectorOn, onToggleInspector, onClear, onDeleteMark, onClose,
+  marks, inspectorOn, onToggleInspector, onClear, onDeleteMark, onClose, autoSend,
 }: {
   marks: DevMark[];
   inspectorOn: boolean;
+  autoSend: 'idle' | 'ok' | 'fail';
   onToggleInspector: () => void;
   onClear: () => void;
   onDeleteMark: (n: number) => void;
@@ -950,6 +971,16 @@ function MarkDrawer({
         {sendState === 'sent' && (
           <p className="mt-1.5 text-[10px] text-[#4E7D6C] leading-relaxed">
             已送达 —— 对方那边会自动读到。
+          </p>
+        )}
+        {autoSend === 'ok' && (
+          <p className="mt-1.5 text-[10px] text-[#4E7D6C] leading-relaxed">
+            已自动送达 ✓ 标完直接跟劳模说一声，不用复制粘贴。
+          </p>
+        )}
+        {autoSend === 'fail' && (
+          <p className="mt-1.5 text-[10px] text-[#E24B4A] leading-relaxed">
+            自动送达失败 —— 点上面的「发给我」，或用「导出 JSON 文件」兜底。
           </p>
         )}
       </div>

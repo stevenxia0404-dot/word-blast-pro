@@ -186,12 +186,18 @@ export default function Inspector() {
     setMarks(all);
     markedElsRef.current.push(el);
 
-    // 每标一个就自动写剪贴板 —— 这样他标完直接粘给我就行，
-    // 不用再点一次「复制」。剪贴板写失败无所谓（面板上还能手动复制）。
-    try {
-      void navigator.clipboard.writeText(JSON.stringify(all, null, 2));
-      setCopied(all.length);
-    } catch { /* 剪贴板不可用就靠手动复制 */ }
+    // 主通道：同源 POST 直接落到本机文件。剪贴板在 iframe / 内嵌预览里经常被拒，
+    // 而且 writeText 是异步的，以前 try/catch 抓不到失败还照样报「已复制」＝假成功。
+    // 每标一条发一次全量，最后一次即为完整清单；失败不影响标记本身。
+    void fetch('/api/dev-marks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(all),
+      keepalive: true,
+    }).then(r => { if (r.ok) setCopied(all.length); }).catch(() => { /* 收件服务没起就退回剪贴板 */ });
+
+    // 剪贴板只作兜底，写好才算数，别再给假成功
+    navigator.clipboard?.writeText(JSON.stringify(all, null, 2)).catch(() => {});
   }, []);
 
   // ---------- 悬浮高亮 ----------
@@ -388,7 +394,7 @@ export default function Inspector() {
           <div className="flex items-center justify-between px-3 py-2 border-b border-[#E8E4DF] bg-[#F7F5F2]">
             <span className="text-xs font-semibold">
               标注 {marks.length ? `(${marks.length})` : ''}
-              {copied > 0 && <span className="ml-1.5 text-[10px] font-normal text-[#4E7D6C]">已复制 → 粘给我</span>}
+              {copied > 0 && <span className="ml-1.5 text-[10px] font-normal text-[#4E7D6C]">已送达 ✓ 标完说一声</span>}
             </span>
             <div className="flex gap-1">
               <button onClick={copyAll} className="px-2 py-0.5 text-[10px] rounded bg-[#ED6A3B] text-white">复制</button>
