@@ -6,6 +6,7 @@
  */
 import type { TitleDef } from '../config/gameConfig'
 import type { ModuleProgress } from '../hooks/useSpokenRecords'
+import { SyncStatus } from './SyncStatus'
 
 interface Props {
   blastAction: 'start' | 'resume' | 'certificate'
@@ -14,8 +15,12 @@ interface Props {
   spokenScore: number
   title: TitleDef
   progress: ModuleProgress
-  /** 同步是否已开启，底部提示随之变化 */
+  /** 左下角同步指示器：状态全部来自 useSync，不碰同步逻辑 */
   syncSigned?: boolean
+  syncBusy?: boolean
+  syncDirty?: boolean
+  syncEmail?: string | null
+  onSyncNow?: () => void
   /** dev 演示：?grand 强制点亮三枚勋章，可一键预览金色大满贯证书 */
   demo?: boolean
   onStartBlast: () => void
@@ -34,7 +39,7 @@ const BLAST_SUBTITLE = {
 
 export function HomeScreen({
   blastAction, blastLevel, blastScore, spokenScore, title,
-  progress, demo, syncSigned,
+  progress, demo, syncSigned, syncBusy, syncDirty, syncEmail, onSyncNow,
   onStartBlast, onStartRepeat, onStartDialogue, onPreviewCertificate,
   onOpenSync, onOpenParent,
 }: Props) {
@@ -145,11 +150,17 @@ export function HomeScreen({
               <span>家长区</span>
             </button>
           </div>
-          <p className="text-[11px] text-lime-600 mb-1">
-            {syncSigned ? '（☁️ 同步已开启 · 进度与词库多设备共享）' : '（本机离线可用 · 登录后自动跨设备同步）'}
-          </p>
-
-          <p className="text-[11px] text-emerald-400 mt-1">v3.4</p>
+          {/* 左下角：照菠萝日程的状态点 + 刷新箭头；底部重复的文字提示已移除 */}
+          <div className="w-full flex items-center justify-between mt-1">
+            <SyncStatus
+              signed={!!syncSigned}
+              busy={!!syncBusy}
+              dirty={!!syncDirty}
+              email={syncEmail ?? null}
+              onSyncNow={onSyncNow ?? (() => {})}
+            />
+            <p className="text-[11px] text-emerald-400">v3.4</p>
+          </div>
         </div>
       </div>
     </div>

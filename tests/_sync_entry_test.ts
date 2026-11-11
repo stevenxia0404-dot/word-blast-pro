@@ -37,7 +37,7 @@ const ok = (c, l, e = '') => { if (c) console.log('  ✅', l); else { fail++; co
   ok(!home.includes('导入课本单词'), '首页不再放「导入课本单词」')
   ok(!home.includes('下载模板'), '首页不再放「下载模板」')
   ok(!home.includes('即将上线'), '不再有「即将上线」占位')
-  ok(home.includes('本机离线可用'), '底部写明本机离线可用')
+  ok(await page.locator('[data-testid="sync-status"]').count() === 1, '白框左下角有同步状态点')
   ok(home.includes('v3.4'), '首页版本号 v3.4')
 
   console.log('\n[2] 同步面板：纯邮箱，同步码已彻底删除')

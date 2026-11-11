@@ -304,6 +304,10 @@ function App() {
           progress={progress}
           demo={demo}
           syncSigned={sync.signed}
+          syncBusy={sync.busy}
+          syncDirty={sync.dirty}
+          syncEmail={sync.email}
+          onSyncNow={() => { void sync.syncNow(true) }}
           onStartBlast={startBlast}
           onStartRepeat={() => setModule('repeat')}
           onStartDialogue={() => setModule('dialogue')}
