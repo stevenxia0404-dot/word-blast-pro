@@ -22,3 +22,4 @@ tests/_sync_state_e2e.js
 # dev-frame 标注收件（本机临时数据，不进仓库）
 /.workbuddy/marks.json
 /.workbuddy/marks.jsonl
+tests/_audio_network_e2e.js

@@ -125,9 +125,13 @@ export default defineConfig({
             urlPattern: /\/audio\/.*\.mp3$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'wb-audio-v1',
+              // 升 v2：v1 里可能已存过旧逻辑留下的 206 响应，换名让新 SW 从干净缓存开始
+              cacheName: 'wb-audio-v2',
               expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 180 },
-              cacheableResponse: { statuses: [0, 200] },
+              // 浏览器 <audio> 必发 Range → 服务端 206 Partial Content。
+              // 实测 Cloudflare 对 Range: bytes=0- 返回的是全量（content-range 0-(len-1)/len），
+              // 缓存 206 不会存到残缺片段；旧白名单只收 200 导致预热全部落空。
+              cacheableResponse: { statuses: [0, 200, 206] },
             },
           },
         ],

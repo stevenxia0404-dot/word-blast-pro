@@ -1,14 +1,18 @@
-/* useAudio.ts — 语音中枢（v3.4：统一抢占 + 预热，修播报延迟 / 降级 / 串音）
+/* useAudio.ts — 语音中枢（v3.4.5：缓存真生效 + 失败不降级 + 同 URL 复用）
  * 两级语音链：预生成神经语音（edge-tts）→ 系统 SpeechSynthesis 兜底
  * 双音色（Steven 2026-11-07 拍板）：Ana 童声 = 消消乐 + 跟读；Emma 女声 = 对话全程
  *
- * v3.4 修的三个真实问题：
- *  1) 延迟：mp3 首次加载要等网络 → 进入关卡/跟读/对话时预热本轮音频进 HTTP 缓存；
- *     系统 TTS 兜底不再 await 最长 3 秒的 voices 列表。
- *  2) 突然变机械音：旧版被新播报打断的 play() 会 reject 后仍回退系统 TTS；
- *     现在「被抢占」与「真未命中」分开，抢占时绝不兜底。
- *  3) 多人声音重叠：所有播放共用一个抢占令牌，播放前统一 cancel 系统 TTS，
- *     切题 stopNeural() 也会掐掉系统音尾巴；unlockAudio() 不再抢播报用的 audio 元素。
+ * v3.4：统一抢占令牌、预热、区分「被抢占」与「真未命中」、独立元素做 iOS 解锁。
+ * v3.4.5（2026-11-12 线上滞后/降级/重叠复现后修复）：
+ *  1) 预热原来用 <audio>.load() 发 Range 请求 → 服务端 206，而 SW 缓存白名单只收 200，
+ *     预热 100 个文件一个都没存下来，每次播报都重新走网络 = 滞后的主因。
+ *     改为 fetch 全量（200 进 SW 缓存）+ 并发限流 3 + 每轮上限，白名单补 206，
+ *     cacheName 升 v2 清掉旧的脏缓存。
+ *  2) 拆分 missing（manifest 确实没这条音频）/ failed（mp3 404、解码失败、play 超时）：
+ *     只有 missing 才降级系统 TTS；failed 静默并清 UI，不再突然冒机械音叠在神经音上。
+ *  3) 同一 URL 不重新赋值 src（原来每次强制 load/解码）；stopNeural 不再 removeAttribute
+ *     + load() 制造 AbortError 风暴；play() 加超时，慢网下 UI 不一直挂「播放中」。
+ *  4) 降级发生在 beginPlay 几百毫秒之后，讲系统 TTS 前再 cancel 一次（iOS 队列不保证清干净）。
  */
 
 let audioCtx: AudioContext | null = null
@@ -48,6 +52,10 @@ let neuralManifest: Manifest | null = null
 let manifestPromise: Promise<Manifest | null> | null = null
 /** 全局抢占令牌：任何新播放 ++，旧播放的回调/兜底必须校验令牌一致才生效 */
 let currentPlayToken = 0
+/** 播放元素当前 src（相对路径）：同 URL 复用缓冲，不再每次强制 load */
+let lastSrc = ''
+/** play() 超时：慢网下不允许 UI 一直挂在「播放中」 */
+const PLAY_TIMEOUT_MS = 1800
 
 function getAudioEl(): HTMLAudioElement {
   if (!audioEl) {
@@ -99,55 +107,75 @@ export function stopNeural() {
   try {
     el.pause()
     el.onended = null
-    el.removeAttribute('src')
-    el.load()
+    // 只归零、保留 src：removeAttribute + load() 会掐掉正在 pending 的 play()，
+    // 制造一串 AbortError，还会让下次同 URL 必须重新走网络解码。
+    if (el.src) el.currentTime = 0
   } catch { /* ignore */ }
 }
 
-type NeuralResult = 'played' | 'miss' | 'aborted'
+type NeuralResult = 'played' | 'missing' | 'failed' | 'aborted'
 
-/** 命中并播起来 = 'played'；确实没音频 = 'miss'；被新播报抢占 = 'aborted'（绝不兜底） */
+/** played=播起来了；missing=确实没这条音频（唯一允许降级）；
+ *  failed=网络/解码/超时失败（绝不降级）；aborted=被新播报抢占（什么都不做） */
 async function tryPlayNeural(
   text: string, slow: boolean, onEnd: (() => void) | undefined,
   voice: VoiceId, token: number,
 ): Promise<NeuralResult> {
   const man = await loadManifest()
   if (token !== currentPlayToken) return 'aborted'
-  if (!man) return 'miss'
+  if (!man) return 'missing' // 清单都拿不到：本地系统 TTS 是唯一还能出声的通道
   const entry = man[voice]?.[text.toLowerCase()]
-  if (!entry) return 'miss'
+  if (!entry) return 'missing'
   const el = getAudioEl()
+  const src = `${import.meta.env.BASE_URL}audio/${slow ? entry.s : entry.n}`
   try { el.pause() } catch { /* ignore */ }
   el.muted = false
   el.volume = 1
-  el.src = `${import.meta.env.BASE_URL}audio/${slow ? entry.s : entry.n}`
+  // 关键：同一个 URL 不重新赋值 src。旧版每次重设强制 load + 重新解码，
+  // 是「点一下要等半秒」的主要开销，也让预热好的缓冲白费。
+  if (lastSrc !== src) {
+    el.src = src
+    lastSrc = src
+  } else {
+    try { el.currentTime = 0 } catch { /* ignore */ }
+  }
   el.onended = () => {
     el.onended = null
     if (token === currentPlayToken) onEnd?.()
   }
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('play timeout')), PLAY_TIMEOUT_MS)
+  })
   try {
-    await el.play()
+    await Promise.race([el.play(), timeout])
     if (token !== currentPlayToken) {
       try { el.pause() } catch { /* ignore */ }
       return 'aborted'
     }
     return 'played'
   } catch {
-    // play 被拒：若原因是被新播报抢占，绝不回退系统 TTS，否则两路声音会叠在一起
+    // 被抢占：绝不回退系统 TTS，否则两路声音叠在一起。
+    // 网络抖动/404/超时：也绝不降级，静默收场，用户再点一次即可（此时多半已进缓存）。
     if (token !== currentPlayToken) return 'aborted'
-    try { el.pause(); el.removeAttribute('src') } catch { /* ignore */ }
-    return 'miss'
+    try { el.pause() } catch { /* ignore */ }
+    return 'failed'
+  } finally {
+    if (timer) clearTimeout(timer)
   }
 }
 
-/** 音频预热：把本轮会播的 mp3 提前拉进 HTTP 缓存，点击时不再等首次加载。
- *  用独立元素 + 去重集合，不碰播放用的那个 audio 元素。 */
+/** 音频预热：把本轮会播的 mp3 以「全量 200」拉进 SW Cache Storage，点击时零网络等待。
+ *  v3.4.5：旧版用 <audio>.load() 发 Range 得 206，被缓存白名单挡掉，预热等于白做；
+ *  而且一次并发 100 个请求会抢带宽，反而让正在点的那条播报更慢。 */
 const prefetched = new Set<string>()
-const prefetchEls: HTMLAudioElement[] = []
+const PREFETCH_CONCURRENCY = 3
+const MAX_PREFETCH_PER_ROUND = 30
 
 export function prefetchNeural(texts: string[], voice: VoiceId = 'ana') {
   void loadManifest().then(man => {
     if (!man) return
+    const urls: string[] = []
     for (const t of texts) {
       const entry = man[voice]?.[String(t).toLowerCase()]
       if (!entry) continue
@@ -155,17 +183,25 @@ export function prefetchNeural(texts: string[], voice: VoiceId = 'ana') {
         const src = `${import.meta.env.BASE_URL}audio/${file}`
         if (prefetched.has(src)) continue
         prefetched.add(src)
-        const a = new Audio()
-        a.preload = 'auto'
-        a.src = src
-        a.load()
-        prefetchEls.push(a)
+        urls.push(src)
+      }
+      if (urls.length >= MAX_PREFETCH_PER_ROUND) break
+    }
+    // fetch 不带 Range → 服务端 200 全量 → CacheFirst 能真正写进缓存。
+    // 读完 body 才算一次完整响应，SW 才会落盘；失败静默，播放时仍会按需缓存。
+    let cursor = 0
+    const worker = async () => {
+      while (cursor < urls.length) {
+        const src = urls[cursor++]
+        try {
+          const r = await fetch(src)
+          if (r.ok) await r.arrayBuffer()
+        } catch { /* 单个失败不影响其余预热 */ }
       }
     }
-    while (prefetchEls.length > 80) {
-      const old = prefetchEls.shift()
-      try { old?.pause(); old?.removeAttribute('src') } catch { /* ignore */ }
-    }
+    void Promise.all(
+      Array.from({ length: Math.min(PREFETCH_CONCURRENCY, urls.length) }, () => worker()),
+    )
   })
 }
 
@@ -177,6 +213,7 @@ export function playRecordingUrl(url: string, onEnd?: () => void) {
   el.muted = false
   el.volume = 1
   el.src = url
+  lastSrc = url // 录音回放换掉了 src，下次播报必须重新赋值
   el.onended = () => {
     el.onended = null
     if (token === currentPlayToken) onEnd?.()
@@ -192,6 +229,10 @@ function speakSystem(text: string, onEnd?: () => void, token = currentPlayToken)
     .toLowerCase()
   if (!clean) { onEnd?.(); return }
   if (!('speechSynthesis' in window)) { onEnd?.(); return }
+  if (token !== currentPlayToken) return
+  // 降级发生在 beginPlay 几百毫秒之后；iOS 的 cancel() 不保证清干净队列，
+  // 讲之前再掐一次，避免机械音和还没停的神经音尾巴叠在一起。
+  cancelSystem()
   try {
     const utterance = new SpeechSynthesisUtterance(clean)
     utterance.rate = 0.85
@@ -227,8 +268,9 @@ export async function speakNeural(
 ) {
   const token = beginPlay()
   const r = await tryPlayNeural(text, !!opts.slow, opts.onEnd, opts.voice ?? 'ana', token)
-  if (r === 'miss' && token === currentPlayToken) speakSystem(text, opts.onEnd, token)
-  // 'aborted'：新播报已经接管，这里什么都不做，杜绝系统 TTS 乱入
+  if (r === 'aborted' || token !== currentPlayToken) return // 新播报已接管
+  if (r === 'missing') speakSystem(text, opts.onEnd, token)
+  else if (r === 'failed') opts.onEnd?.() // 静默失败：清掉 playing 状态，绝不降级、绝不重叠
 }
 
 /** 对话模块专用：Emma 女声（提问 + 示范回答同一人） */

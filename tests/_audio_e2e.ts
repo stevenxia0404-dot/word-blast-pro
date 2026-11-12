@@ -27,10 +27,13 @@ const ok = (c: any, l: string, e = '') => {
     w.__preloads = 0
     w.__ttsSpeak = 0
     w.__ttsCancel = 0
-    const origLoad = HTMLMediaElement.prototype.load
-    HTMLMediaElement.prototype.load = function () {
-      w.__preloads++
-      return origLoad.call(this)
+    // v3.4.5：预热改用 fetch 全量 200（不再用 <audio>.load() 发 Range），
+    // 所以这里计数 mp3 的 fetch 请求，而不是 media.load()。
+    const origFetch = window.fetch
+    ;(window as any).fetch = function (input: any, init?: any) {
+      const url = typeof input === 'string' ? input : (input && input.url) || ''
+      if (/\/audio\/.*\.mp3/.test(url)) w.__preloads++
+      return origFetch.call(window, input, init)
     }
     try {
       Object.defineProperty(window, 'speechSynthesis', {
@@ -61,7 +64,7 @@ const ok = (c: any, l: string, e = '') => {
   await page.getByRole('button', { name: /跟读练习/ }).click()
   await page.waitForTimeout(1400)
   const pre1 = await page.evaluate(() => (window as any).__preloads)
-  ok(pre1 >= 5, '跟读队列示范音已预热（load 调用 ' + pre1 + ' 次）')
+  ok(pre1 >= 5, '跟读队列示范音已预热（mp3 fetch ' + pre1 + ' 次）')
 
   console.log('\n[2] 快速连点示范音：不回退系统 TTS、不叠音')
   const buttons = page.locator('button')
